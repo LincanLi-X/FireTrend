@@ -1,0 +1,47 @@
+# ================================================================
+# FireTrend Project Configuration (Final, 2025-12)
+# ================================================================
+
+data:
+  root_dir: "./data"               # 根数据目录
+  region: "california"             # 可选: "california" 或 "florida"
+  seq_length: 8                    # 输入时间步长度
+  pred_horizon: 1                  # 预测提前步数
+  input_resolution: [49,53]      # 每个时刻二维矩阵的分辨率 (California 默认)
+  normalize: true                  # 是否标准化输入
+  num_workers: 4                   # DataLoader 线程数
+
+  # 特征通道说明
+  modalities:
+    wildfire: ["wildfire_risk"]    # 历史野火强度 (来自 .h5)
+    meteorology: ["u10", "v10", "d2m", "t2m", "msl", "sp"]
+    geospatial: ["stl1", "swvl1"]
+
+model:
+  embed_dim: 128                   # 编码器嵌入维度
+  hidden_dim: 256                  # 前馈网络隐层维度
+  num_heads: 8                     # 注意力头数量
+  kernel_size: 3                   # PyroCast 卷积核大小
+  beta: 0.3                        # PyroCast 风向约束权重
+  height: 80                       # 匹配数据分辨率
+  width: 120
+
+training:
+  epochs: 80
+  batch_size: 2
+  lr: 1e-4
+  weight_decay: 1e-5
+  num_workers: 4
+  seed: 42
+
+logging:
+  save_dir: "./outputs/logs"
+
+outputs:
+  checkpoint_dir: "./outputs/checkpoints"
+  results_dir: "./outputs/predictions"
+  figures_dir: "./outputs/figures"
+
+device:
+  use_gpu: true
+  gpu_id: 0
