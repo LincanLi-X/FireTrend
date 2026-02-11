@@ -159,7 +159,7 @@ pytorch-lightning>=2.2.0  # optional training loop simplification
 ```
 
 
-## Train FireTrend Model
+### Train FireTrend Model
 
 Use the provided ERA5 + wildfire grid datasets in `0_FireTrend/data` to train the model.
 
