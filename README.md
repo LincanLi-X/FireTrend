@@ -22,9 +22,13 @@ Each file contains daily grid-based wildfire risk labels and aligned multi-modal
 
 The dataset is constructed through a unified pipeline consisting of the following stages:
 
-```
+<!--```
 Data Acquisition → Spatial Standardization → Temporal Alignment → Grid Aggregation → Feature Integration & Label Generation
-```
+```-->
+
+<p align="center">
+     <img src="assets/dataset_flow_chart.png" alt="dataset_flowchart" width="550px">
+</p>
 
 
 ### Step 1: Data Acquisition
@@ -82,11 +86,8 @@ $$
 ### Step 4: Wildfire Risk Label Generation
 
 Wildfire risk labels are derived from NASA fire confidence score (continuous value). Each grid cell is assigned one of three risk levels:
-
-  * Low
-  * Medium
-  * High
-* Labels are generated daily based on aggregated fire confidence within the grid cell.
+  * Low; * Medium; * High
+Labels are generated daily based on aggregated fire confidence within the grid cell.
 
 
 
