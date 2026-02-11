@@ -69,7 +69,6 @@ All data modalities are projected to the same **common geographic reference syst
 ### Step 3: Grid-Level Feature Integration
 
 For each grid cell i and day t, all aligned features are concatenated into a unified multi-channel representation:
-<div align="left">
 $$
 \mathbf{x}_{i,t} =
 \left[
@@ -78,7 +77,7 @@ $$
 \mathbf{f}^{\text{geo}}_{i,t}
 \right]
 $$
-</div>
+
 
 ### Step 4: Wildfire Risk Label Generation
 
