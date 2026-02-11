@@ -245,7 +245,11 @@ The script will load the checkpoint, run evaluation, and print metrics (IoU/AUC/
 
 ### Acknowledgements
 ```
-
+@inproceedings{FireTrend2026,
+  title={FireTrend: Physics-Guided Contrastive Learning for Large-Scale Wildfire Risk Forecasting and Management},
+  author={Anonymous A, Anonymous B, Anonymous C, Anonymous D, Anonymous E, Anonymous F},
+  booktitle={Submission to Conference}
+}
 ```
 
 
