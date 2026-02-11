@@ -159,11 +159,11 @@ pytorch-lightning>=2.2.0  # optional training loop simplification
 ```
 
 
-### Train FireTrend Model
+## Train FireTrend Model
 
 Use the provided ERA5 + wildfire grid datasets in `0_FireTrend/data` to train the model.
 
-#### 1. Configure the Training Parameters
+### 1. Configure the Training Parameters
 
 Open `config.yaml` and update the following:
 - `data.root_dir` → point to your local dataset folder (e.g., `./data`)
@@ -172,7 +172,7 @@ Open `config.yaml` and update the following:
 - `training.epochs`, `training.batch_size`, `training.lr`
 - **Important:** update `model.height` / `model.width` to match your data resolution (California default is `49×53`, Florida likely `64×64`)
 
-#### 2. Start Training
+### 2. Start Training
 Run the main script:
 ```sh
 python main.py --config config.yaml --train --region california
