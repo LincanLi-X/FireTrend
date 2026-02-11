@@ -164,23 +164,23 @@ pytorch-lightning>=2.2.0  # optional training loop simplification
 Use the provided ERA5 + wildfire grid datasets in `0_FireTrend/data` to train the model.
 
 #### 1. Configure the Training Parameters
-   - Open `config.yaml` and update the following:
-     - `data.root_dir` → point to your local dataset folder (e.g., `./data`)
-     - `data.region` → `"california"` or `"florida"`
-     - `data.seq_length`, `data.pred_horizon`
-     - `training.epochs`, `training.batch_size`, `training.lr`
-     - **Important:** update `model.height` / `model.width` to match your data resolution  
-       (California default is `49×53`, Florida likely `64×64`)
+
+Open `config.yaml` and update the following:
+- `data.root_dir` → point to your local dataset folder (e.g., `./data`)
+- `data.region` → `"california"` or `"florida"`
+- `data.seq_length`, `data.pred_horizon`
+- `training.epochs`, `training.batch_size`, `training.lr`
+- **Important:** update `model.height` / `model.width` to match your data resolution (California default is `49×53`, Florida likely `64×64`)
 
 #### 2. Start Training
-   - Run the main script:
-   ```sh
-   python main.py --config config.yaml --train --region california
-   ```
-   - Checkpoints will be saved to:
-     - `./outputs/checkpoints/{region}_model_epoch_XXX.pth`
-     - `./outputs/checkpoints/{region}_model_best.pth`
-   - Logs are written to `./outputs/logs/`
+Run the main script:
+```sh
+python main.py --config config.yaml --train --region california
+```
+Checkpoints will be saved to:
+- `./outputs/checkpoints/{region}_model_epoch_XXX.pth`
+- `./outputs/checkpoints/{region}_model_best.pth`
+Logs are written to `./outputs/logs/`
 
 **Optional:** use the bash helper script:
 ```sh
@@ -193,13 +193,13 @@ bash scripts/train_firetrend.sh
 Use a trained checkpoint to evaluate the model on the same region dataset.
 
 1. **Configure the Testing Parameters**
-   - Confirm `data.root_dir` and `data.region` in `config.yaml`
-   - Select the correct checkpoint path (e.g. best model)
+- Confirm `data.root_dir` and `data.region` in `config.yaml`
+- Select the correct checkpoint path (e.g. best model)
 
 2. **Run Testing**
-   ```sh
-   python main.py --config config.yaml --test --region california --checkpoint ./outputs/checkpoints/california_model_best.pth
-   ```
+```sh
+python main.py --config config.yaml --test --region california --checkpoint ./outputs/checkpoints/california_model_best.pth
+```
 The script will load the checkpoint, run evaluation, and print metrics (IoU/AUC/F1) to logs.
 
 
