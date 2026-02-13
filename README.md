@@ -247,7 +247,8 @@ It approximates wind-driven advection and isotropic diffusion using a directiona
 
 #### 1. Physical Motivation
 
-Wildfire spread can be described by a convection–diffusion process:
+Wildfire spread can be described by a convection-diffusion process:
+
 $$
 \frac{\partial R}{\partial t} \approx -\mathbf{v} \cdot \nabla R + D \nabla^2 R
 $$
