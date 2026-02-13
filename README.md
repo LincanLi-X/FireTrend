@@ -248,13 +248,8 @@ It approximates wind-driven advection and isotropic diffusion using a directiona
 #### 1. Physical Motivation
 
 Wildfire spread can be described by a convection–diffusion process:
-
 $$
-\frac{\partial R}{\partial t}
-\approx
--\mathbf{v} \cdot \nabla R
-+
-D \nabla^2 R
+\frac{\partial R}{\partial t} \approx -\mathbf{v} \cdot \nabla R + D \nabla^2 R
 $$
 
 Where wind drives directional propagation, and Diffusion smooths intensity locally. PyroCast discretizes this process into a differentiable convolution.
@@ -262,16 +257,11 @@ Where wind drives directional propagation, and Diffusion smooths intensity local
 #### 2. Directional Kernel Construction
 
 We construct a wind-aligned kernel:
-
 $$
-K_t = \alpha_t \cdot 
-\exp\left(
--\frac{\| R_{\phi_t}\mathbf{c}_{ij} - \mathbf{c} \|^2}{2\sigma^2}
-\right)
+K_t = \alpha_t \cdot \exp\left(-\frac{\| R_{\phi_t}\mathbf{c}_{ij} - \mathbf{c} \|^2}{2\sigma^2} \right)
 $$
 
 where: $\phi_t$ is wind direction, $R_{\phi_t}$ rotates the kernel toward wind; $\sigma$ controls spatial smoothness; $\alpha_t$ scales spread intensity. The scaling factor depends on meteorological features:
-
 $$
 \alpha_t \propto s_t \cdot (1 + \eta_1 T_t - \eta_2 H_t)
 $$
@@ -281,12 +271,7 @@ $$
 #### 3. Physics-Guided Propagation
 
 Given predicted fire risk $\hat{Y}_t$, PyroCast performs:
-
-$$
-\tilde{Y}_{t+1}
-=
-\hat{Y}_t * K_t
-$$
+$$\tilde{Y}_{t+1}=\hat{Y}_t * K_t$$
 
 This spreads high-risk regions along wind direction while preserving spatial continuity.
 
