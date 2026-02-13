@@ -269,7 +269,7 @@ $$
 \alpha_t \propto s_t \cdot (1 + \eta_1 T_t - \eta_2 H_t)
 $$
 
-> Meaning: Faster wind → stronger spread; Higher temperature → enhanced ignition; Higher humidity → suppressed propagation  
+**Meaning:** `Faster wind → stronger spread`; `Higher temperature → enhanced ignition`; `Higher humidity → suppressed propagation`  
 
 #### 3. Physics-Guided Propagation
 
@@ -292,16 +292,16 @@ $$
 where $\beta$ balances physics guidance and data-driven prediction.
 
 
-**Summary:** PyroCast can be viewed as: A wind-aligned, meteorology-modulated convolution that embeds convection–diffusion dynamics into deep learning. It improves spatial coherence and enforces physically plausible wildfire spread while remaining fully differentiable.
+> **Summary:** PyroCast can be viewed as: A wind-aligned, meteorology-modulated convolution that embeds convection–diffusion dynamics into deep learning. It improves spatial coherence and enforces physically plausible wildfire spread while remaining fully differentiable.
 
 ---
 
 #### Performance w and w/o PyroCast Module
 
-**Performance of Baseline Methods with and without Pyrocast Module**
-
-**FireTrend with and without PyroCast Module**
-
+<p align="center">
+     <img src="assets/Physics-Guided-Module_Vis.png" alt="performance_pyrocast_module" width="600px">
+     <br/> Figure: Spatial-temporal wildfire risk map w and w/o the physics-guided PyroCast module.
+</p>
 
 #### PyroCast (directional-aware Conv) V.S. Standard Convolution)
 
