@@ -305,7 +305,7 @@ where $\beta$ balances physics guidance and data-driven prediction.
 
 #### PyroCast (directional-aware Conv) V.S. Standard Convolution
 
-To validate the computational efficiency of the proposed PyroCast operator, we conduct an experimental evaluation between the proposed PyroCast convolution and a standard convolution layer. The average runtime (ms) and memory usage (MB) are reported for comparison. We use various input tensor with size (32 x 32), (64 x 64), (128 x 128), (256 x 256).
+> To validate the computational efficiency of the proposed PyroCast operator, we conduct an experimental evaluation between the proposed PyroCast convolution and a standard convolution layer. The average runtime (ms) and memory usage (MB) are reported for comparison. We use various input tensor with size (32 x 32), (64 x 64), (128 x 128), (256 x 256).
 
 | **Input Size** | **Conv (ms)** | **PyroCast (ms)** | **Conv (MB)** | **PyroCast (MB)** |
 |:--------------:|:-------------:|:-----------------:|:-------------:|:-----------------:|
