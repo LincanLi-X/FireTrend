@@ -208,7 +208,7 @@ The script will load the checkpoint, run evaluation, and print metrics (IoU/AUC/
 <p align="center">
      <br/> Table 1. Comparison of different methods on the FireCast-California and Florida subsets. The best results are highlighted in bold.
      <br/>
-     <img src="assets/Experiment_Table1.png" alt="dataset_flowchart" width="650px">
+     <img src="assets/Experiment_Table1.png" alt="dataset_flowchart" width="670px">
 </p>
 
 <p align="center">
