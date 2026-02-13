@@ -68,7 +68,8 @@ All data modalities are projected to the same **common geographic reference syst
 
 ### Step 3: Grid-Level Feature Integration
 
-For each grid cell i and day t, all aligned features are concatenated into a unified multi-channel representation:
+For each grid cell $i$ and day $t$, all aligned features are concatenated into a unified multi-channel representation:
+
 $$
 \mathbf{x}_{i,t} =
 \left[
