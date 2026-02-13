@@ -52,7 +52,6 @@ We collect data from multiple authoritative sources covering wildfire activity, 
 #### (4) Vegetation and Fuel Indicators (5-dim)
 
 * **Source**: LANDFIRE
-* **Temporal resolution**: The original resolution is xx. We interpolated to daily frequency.
 * **Features**: Existing Vegetation Type (EVT), Existing Vegetation Cover (EVC), Existing Vegetation Height (EVH), Surface Fuel (SF), Canopy Fuel (CF).
 
 
