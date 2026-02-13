@@ -241,9 +241,75 @@ The script will load the checkpoint, run evaluation, and print metrics (IoU/AUC/
 
 ### PyroCast: Physics-Guided Directional Aware Convolution
 
-#### Mathematical Formulation
 
-#### Performance  w and w/o PyroCast Module
+ **Core Idea:** PyroCast embeds wildfire propagation physics into a learnable convolution operator.  
+It approximates wind-driven advection and isotropic diffusion using a directional kernel.
+
+#### 1. Physical Motivation
+
+Wildfire spread can be described by a convection–diffusion process:
+
+$$
+\frac{\partial R}{\partial t}
+\approx
+-\mathbf{v} \cdot \nabla R
++
+D \nabla^2 R
+$$
+
+Where wind drives directional propagation, and Diffusion smooths intensity locally. PyroCast discretizes this process into a differentiable convolution.
+
+#### 2. Directional Kernel Construction
+
+We construct a wind-aligned kernel:
+
+$$
+K_t = \alpha_t \cdot 
+\exp\left(
+-\frac{\| R_{\phi_t}\mathbf{c}_{ij} - \mathbf{c} \|^2}{2\sigma^2}
+\right)
+$$
+
+where: $\phi_t$ is wind direction, $R_{\phi_t}$ rotates the kernel toward wind; $\sigma$ controls spatial smoothness; $\alpha_t$ scales spread intensity. The scaling factor depends on meteorological features:
+
+$$
+\alpha_t \propto s_t \cdot (1 + \eta_1 T_t - \eta_2 H_t)
+$$
+
+> Meaning: Faster wind → stronger spread; Higher temperature → enhanced ignition; Higher humidity → suppressed propagation  
+
+#### 3. Physics-Guided Propagation
+
+Given predicted fire risk $\hat{Y}_t$, PyroCast performs:
+
+$$
+\tilde{Y}_{t+1}
+=
+\hat{Y}_t * K_t
+$$
+
+This spreads high-risk regions along wind direction while preserving spatial continuity.
+
+#### 4. Residual Fusion
+
+To retain flexibility:
+
+$$
+Y_{t+1}^{\text{final}}
+=
+\beta \tilde{Y}_{t+1}
++
+(1-\beta)\hat{Y}_{t+1}
+$$
+
+where $\beta$ balances physics guidance and data-driven prediction.
+
+
+**Summary:** PyroCast can be viewed as: A wind-aligned, meteorology-modulated convolution that embeds convection–diffusion dynamics into deep learning. It improves spatial coherence and enforces physically plausible wildfire spread while remaining fully differentiable.
+
+---
+
+#### Performance w and w/o PyroCast Module
 
 **Performance of Baseline Methods with and without Pyrocast Module**
 
