@@ -257,11 +257,13 @@ Where wind drives directional propagation, and Diffusion smooths intensity local
 #### 2. Directional Kernel Construction
 
 We construct a wind-aligned kernel:
+
 $$
 K_t = \alpha_t \cdot \exp\left(-\frac{\| R_{\phi_t}\mathbf{c}_{ij} - \mathbf{c} \|^2}{2\sigma^2} \right)
 $$
 
 where: $\phi_t$ is wind direction, $R_{\phi_t}$ rotates the kernel toward wind; $\sigma$ controls spatial smoothness; $\alpha_t$ scales spread intensity. The scaling factor depends on meteorological features:
+
 $$
 \alpha_t \propto s_t \cdot (1 + \eta_1 T_t - \eta_2 H_t)
 $$
@@ -271,7 +273,10 @@ $$
 #### 3. Physics-Guided Propagation
 
 Given predicted fire risk $\hat{Y}_t$, PyroCast performs:
-$$\tilde{Y}_{t+1}=\hat{Y}_t * K_t$$
+
+$$
+\tilde{Y}_{t+1}=\hat{Y}_t * K_t
+$$
 
 This spreads high-risk regions along wind direction while preserving spatial continuity.
 
@@ -280,11 +285,7 @@ This spreads high-risk regions along wind direction while preserving spatial con
 To retain flexibility:
 
 $$
-Y_{t+1}^{\text{final}}
-=
-\beta \tilde{Y}_{t+1}
-+
-(1-\beta)\hat{Y}_{t+1}
+Y_{t+1}^{\text{final}} = \beta \tilde{Y}_{t+1} + (1-\beta)\hat{Y}_{t+1}
 $$
 
 where $\beta$ balances physics guidance and data-driven prediction.
