@@ -303,8 +303,21 @@ where $\beta$ balances physics guidance and data-driven prediction.
      <br/> Figure: Spatial-temporal wildfire risk map w and w/o the physics-guided PyroCast module.
 </p>
 
-#### PyroCast (directional-aware Conv) V.S. Standard Convolution)
+#### PyroCast (directional-aware Conv) V.S. Standard Convolution
 
+To validate the computational efficiency of the proposed PyroCast operator, we conduct an experimental evaluation between the proposed PyroCast convolution and a standard convolution layer. The average runtime (ms) and memory usage (MB) are reported for comparison. We use various input tensor with size (32 x 32), (64 x 64), (128 x 128), (256 x 256).
+
+| **Input Size** | **Conv (ms)** | **PyroCast (ms)** | **Conv (MB)** | **PyroCast (MB)** |
+|:--------------:|:-------------:|:-----------------:|:-------------:|:-----------------:|
+| 32×32          | 0.119         | 0.303             | 0.1           | 0.6               |
+| 64×64          | 0.142         | 0.347             | 0.5           | 2.2               |
+| 128×128        | 0.153         | 0.354             | 2.0           | 8.5               |
+| 256×256        | 0.168         | 0.371             | 8.0           | 34.0              |
+
+
+<p align="center">
+<img src="assets/pyrocast_vs_stad_conv.png" alt="pyrocast vs standard conv" width="600px">
+</p>
 
 
 ### Acknowledgements
