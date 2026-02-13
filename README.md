@@ -204,6 +204,17 @@ The script will load the checkpoint, run evaluation, and print metrics (IoU/AUC/
 
 ### Experimental Results
 
+
+<p align="center">
+     <br/> Table 1. Comparison of different methods on the FireCast-California and Florida subsets. The best results are highlighted in **bold**.
+     <img src="assets/Experiment_Table1.png" alt="dataset_flowchart" width="600px">
+</p>
+
+<p align="center">
+     <br/> Table 2. Performance comparison of different methods on WildfireSpreadTS dataset. The best results are highlighted in **bold**.
+     <img src="assets/Experiment_Table2.png" alt="dataset_flowchart" width="400px">
+</p>
+
 <!-- <p align="center">
   <img src="assets/original_images.png" alt="Sim2Real-Fire dataset" width="800px">
   <br/> Examples of satellite images with the real fire areas.
