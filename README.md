@@ -322,7 +322,7 @@ where $\beta$ balances physics guidance and data-driven prediction.
 ------
 
 
-## FireCast-US Dataset
+## FireCast-US Dataset Specification & Usage
 
 FireCast-US dataset integrates multi-source environmental, vegetation, topography, fuel, meteorological, and wildfire risk data into a unified spatial-temporal HDF5 format for wildfire modeling and analysis.
 
