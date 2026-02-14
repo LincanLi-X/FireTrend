@@ -46,16 +46,9 @@ Each `.h5` file contains multiple named datasets (subsets). Each subset correspo
 
 ### Data Shape
 
-Unless otherwise specified:
-
-```
-
-(time, latitude, longitude)
-
-```
+Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
 
 **For the full dataset, the time span is: `2023-02-25` → `2025-10-21`, with daily resolution.**
-
 
 
 # Data Sources
