@@ -14,18 +14,17 @@ data/
 │
 ├── FireCast-FL/
 │   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
-│
-└── README.md
+
 ```
 
 ## Full Dataset Availability
 
 The **complete FireCast dataset** is too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
   
-```
-[Google Drive Link Here]
 
-```
+> https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
+
+
 
 
 ## How to Load the Dataset
