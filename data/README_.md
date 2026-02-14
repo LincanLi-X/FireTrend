@@ -7,7 +7,7 @@ FireCast dataset integrates multi-source environmental, vegetation, topography, 
 
 ```
 
-dataset/
+data/
 │
 ├── FireCast-CA/
 │   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
