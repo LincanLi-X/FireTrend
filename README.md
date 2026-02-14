@@ -38,18 +38,18 @@ We collect data from multiple authoritative sources covering wildfire activity, 
 * **Raw attributes**: Coordinate (latitude,longitude) of active fire points, Detection time, Fire confidence score.
 
 
-#### (2) Meteorological Data (9-dim)
+#### (2) Meteorological Data
 
 * **Source:** ERA5 Reanalysis Data(ECMWF).
 * **Variables:** Include Near-surface temperature, Relative humidity, Precipitation, Wind speed and wind direction, Soil moisture and drought-related indicators.
 * **Temporal Resolution**: Hourly.
 
-#### (3) Geospatial and Topographic Data (5-dim)
+#### (3) Geospatial and Topographic Data
 
 * **Sources**: NLCD and LANDFIRE land cover products.
 * **Features**: Elevation, Slope and Aspect, Land cover type, Fuel model category.
 
-#### (4) Vegetation and Fuel Indicators (5-dim)
+#### (4) Vegetation and Fuel Indicators
 
 * **Source**: LANDFIRE
 * **Features**: Existing Vegetation Type (EVT), Existing Vegetation Cover (EVC), Existing Vegetation Height (EVH), Surface Fuel (SF), Canopy Fuel (CF).
