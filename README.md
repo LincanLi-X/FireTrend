@@ -194,7 +194,7 @@ This design is motivated by three considerations:
 - **Training Objective:** Regression (MSE / Smooth L1) on continuous risk score.
 - **Evaluation Metrics:** IoU, F1-score, AUPRC computed on discretized wildfire risk levels.
 
-This pipeline follows a Continuous prediction → Discrete decision framework, which preserves spatial smoothness and physical interpretability.
+This pipeline follows `Continuous prediction → Discrete decision` framework, which preserves spatial smoothness and physical interpretability.
 
 
 
