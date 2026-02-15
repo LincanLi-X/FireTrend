@@ -66,7 +66,7 @@ FireCast dataset is constructed through a unified pipeline consisting of the fol
 ### Data Shape
 
 Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**. 
-For full dataset, the time spans from Feb 2023 to Dec 2025 with daily resolution.**
+For the full dataset, the time spans from `Febr 2023` to `Dec 2025` with **daily resolution**.
 
 The dataset integrates information from:
 
