@@ -157,13 +157,48 @@ This serves as the target variable for modeling.
 
 
 
-### Wildfire Risk Label Generation
+## Wildfire Risk Level Generation
 
-Wildfire risk labels are derived from NASA fire confidence score (continuous value). Each grid cell is assigned one of three risk levels:
-  * Low
-  * Medium
-  * High
-Labels are generated daily based on aggregated fire confidence within the grid cell.
+**Continuous Risk Formulation**
+
+FireTrend predicts a **continuous wildfire risk intensity score**:
+
+$$
+\hat{R}_t \in [0, 100]
+$$
+
+> This score represents the aggregated fire activity strength within each grid cell and is derived from NASA FIRMS active fire detections. Unlike `binary fire/no-fire` detection, this formulation captures the **gradual intensity variation of wildfire risk** across space and time.
+> 
+> Note that NASA FIRMS **does not** directly provide official wildfire risk levels such as `Low / Medium / High`. Therefore, we construct risk levels through a statistically grounded post-processing strategy.
+
+
+### From Continuous Risk to Discrete Risk Levels
+
+To support practical wildfire management scenarios, the continuous risk score is mapped into three risk levels:
+
+- **Low**
+- **Medium**
+- **High**
+
+We adopt a **quantile-based thresholding strategy**, which is widely used in environmental risk modeling (e.g., drought, flood, and air pollution risk mapping).
+
+<!--
+This design is motivated by three considerations:
+
+(a) **Physical Consistency**: FireTrend models wildfire evolution as a continuous spatiotemporal field. Discretization is applied only at the decision stage.
+
+(b) **Statistical Robustness**: Quantile partitioning prevents dominance of extreme fire seasons and stabilizes evaluation.
+
+(c) **Common Practice in Risk Modeling**: Similar percentile-based categorization is standard in Drought severity indices; Flood hazard levels; Air quality index scaling.
+-->
+
+
+### Training vs Evaluation
+
+- **Training Objective:** Regression (MSE / Smooth L1) on continuous risk score.
+- **Evaluation Metrics:** IoU, F1-score, AUPRC computed on discretized wildfire risk levels.
+
+This pipeline follows a Continuous prediction → Discrete decision framework, which preserves spatial smoothness and physical interpretability.
 
 
 
