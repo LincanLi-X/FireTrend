@@ -65,9 +65,8 @@ FireCast dataset is constructed through a unified pipeline consisting of the fol
 
 ### Data Shape
 
-Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
-
-**For the full dataset, the time span is: `2023-02-25` → `2025-10-21`, with daily resolution.**
+Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**. 
+For full dataset, the time spans from Feb 2023 to Dec 2025 with daily resolution.**
 
 The dataset integrates information from:
 
@@ -120,8 +119,7 @@ Below is the complete list of subsets stored inside each `.h5` file:
 ### 🌦 Meteorological FeaturesERA5 – ERA5
 
 All meteorological features are derived from the **ERA5 reanalysis dataset** (ECMWF).
-
-ERA5 originally provides 6-hour resolution data.  
+ERA5 originally provides 6-hour resolution data.
 In FireCast, the data is aggregated to **daily resolution**.
 
 | Subset Name | Full Name | Description |
