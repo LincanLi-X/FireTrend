@@ -62,11 +62,12 @@ FireCast dataset is constructed through a unified pipeline consisting of the fol
 
 ### FireCast Data Acquisition & Dataset Features
 
-
+<!--
 ### Data Shape
 
 Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**. 
 For the full dataset, the time spans from `Febr 2023` to `Dec 2025` with **daily resolution**.
+-->
 
 The dataset integrates information from:
 
@@ -156,16 +157,11 @@ This serves as the target variable for modeling.
 | `longitude` | Longitude grid values |
 
 
-
 ## Wildfire Risk Level Generation
 
-**Continuous Risk Formulation**
+### Continuous Risk Formulation
 
-FireTrend predicts a **continuous wildfire risk intensity score**:
-
-$$
-\hat{R}_t \in [0, 100]
-$$
+FireTrend predicts a **continuous wildfire risk intensity score**: $$\hat{R}_t \in [0, 100]$$
 
 > This score represents the aggregated fire activity strength within each grid cell and is derived from NASA FIRMS active fire detections. Unlike `binary fire/no-fire` detection, this formulation captures the **gradual intensity variation of wildfire risk** across space and time.
 > 
