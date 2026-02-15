@@ -10,17 +10,48 @@
 
 ## FireCast Dataset
 
-We provide two well-formatted `FireCast-CA` and `FireCast-FL` subsets of FireCast-US dataset in this package, namely:
+FireCast-US dataset integrates multi-source environmental, vegetation, topography, fuel, meteorological, and wildfire risk data into a unified spatial-temporal HDF5 format for wildfire modeling and analysis. We have prepared two well-formatted `FireCast-CA` and `FireCast-FL` subsets of FireCast-US in this package, as introduced below:
 
-* **FireCast-CA**
-  `CA_wildfire_grid_ERA5aligned_0p25deg_padded.h5`
+### Repository Dataset Structure
 
-* **FireCast-FL**
-  `FL_wildfire_grid_ERA5aligned_0p25deg_padded.h5`
+```
+
+data/
+│
+├── FireCast-CA/
+│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
+│
+├── FireCast-FL/
+│   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
+
+```
 
 Each file contains daily grid-based wildfire risk labels and aligned multi-modal features at a spatial resolution of 0.25° × 0.25°.
 
-The dataset is constructed through a unified pipeline consisting of the following stages:
+
+
+### Full Dataset Availability
+
+The **complete FireCast-CA** and **FireCast-FL** are too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
+  
+> https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
+
+
+### How to Load the Dataset
+
+Example using `h5py`:
+
+```python
+import h5py
+
+with h5py.File("CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5", "r") as f:
+  print(list(f.keys()))
+  wildfire = f["wildfire_risk"][:]
+```
+
+
+
+FireCast dataset is constructed through a unified pipeline consisting of the following stages:
 
 
 <p align="center">
@@ -28,58 +59,107 @@ The dataset is constructed through a unified pipeline consisting of the followin
 </p>
 
 
-### Step 1: Data Acquisition
 
-We collect data from multiple authoritative sources covering wildfire activity, meteorology, and geospatial context.
-
-#### (1) Wildfire Observations
-
-* **Source**: NASA FIRMS active fire products, derived from MODIS sensors onboard Terra and Aqua satellites and VIIRS sensors onboard Suomi-NPP and NOAA-20 platforms.
-* **Raw attributes**: Coordinate (latitude,longitude) of active fire points, Detection time, Fire confidence score.
+### FireCast Data Acquisition & Dataset Features
 
 
-#### (2) Meteorological Data
+### Data Shape
 
-* **Source:** ERA5 Reanalysis Data(ECMWF).
-* **Variables:** Include Near-surface temperature, Relative humidity, Precipitation, Wind speed and wind direction, Soil moisture and drought-related indicators.
-* **Temporal Resolution**: Hourly.
+Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
 
-#### (3) Geospatial and Topographic Data
+**For the full dataset, the time span is: `2023-02-25` → `2025-10-21`, with daily resolution.**
 
-* **Sources**: NLCD and LANDFIRE land cover products.
-* **Features**: Elevation, Slope and Aspect, Land cover type, Fuel model category.
+The dataset integrates information from:
 
-#### (4) Vegetation and Fuel Indicators
-
-* **Source**: LANDFIRE
-* **Features**: Existing Vegetation Type (EVT), Existing Vegetation Cover (EVC), Existing Vegetation Height (EVH), Surface Fuel (SF), Canopy Fuel (CF).
+- **LANDFIRE** (Vegetation, Topography, Fuel)
+- **ERA5 Reanalysis** (Meteorological variables)
+- **Wildfire Risk Observations** (NASA Satellite Observations)
 
 
-### Step 2: Spatial Standardization
+## Features and Sources
 
-All data modalities are projected to the same **common geographic reference system**:
+Below is the complete list of subsets stored inside each `.h5` file:
 
-* **Coordinate system**: WGS84
-* **Spatial grid**: Regular latitude-longitude grid at 0.25° × 0.25°
-* **Study regions**: Each State of Continental U.S.
+---
+
+### 🌿 Vegetation Features – LANDFIRE 
+
+| Subset Name | Full Name | Description |
+|-------------|-----------|-------------|
+| `EVH` | Existing Vegetation Height | Height of existing vegetation |
+| `EVC` | Existing Vegetation Cover | Percentage vegetation cover |
+| `EVT` | Existing Vegetation Type | Categorical vegetation type classification |
+
+**Source:** LANDFIRE Vegetation Layers
+
+---
+
+### 🏔 Topography Features – LANDFIRE
+
+| Subset Name | Full Name | Description |
+|-------------|-----------|-------------|
+| `Aspect` | Terrain Aspect | Direction slope faces |
+| `Slope` | Terrain Slope | Gradient of terrain |
+| `Elevation` | Terrain Elevation | Elevation above sea level |
+
+**Source:** LANDFIRE Topographic Layers
+
+
+### 🔥 Fuel Features – LANDFIRE
+
+| Subset Name | Full Name | Description |
+|-------------|-----------|-------------|
+| `CBD` | Forest Canopy Bulk Density | Canopy fuel density |
+| `FVH` | Fuel Vegetation Height | Height of fuel vegetation |
+| `FVC` | Fuel Vegetation Cover | Coverage of fuel vegetation |
+| `FVT` | Fuel Vegetation Type | Fuel vegetation classification |
+
+**Source:** LANDFIRE Fuel Layers
+
+
+### 🌦 Meteorological FeaturesERA5 – ERA5
+
+All meteorological features are derived from the **ERA5 reanalysis dataset** (ECMWF).
+
+ERA5 originally provides 6-hour resolution data.  
+In FireCast, the data is aggregated to **daily resolution**.
+
+| Subset Name | Full Name | Description |
+|-------------|-----------|-------------|
+| `d2m` | 2m Dewpoint Temperature | Near-surface dew point temperature |
+| `msl` | Mean Sea Level Pressure | Surface pressure at sea level |
+| `sp` | Surface Pressure | Surface atmospheric pressure |
+| `stl1` | Soil Temperature Level 1 | Top-layer soil temperature |
+| `swvl1` | Soil Water Volumetric Level 1 | Soil moisture (top layer) |
+| `t2m` | 2m Temperature | Near-surface air temperature |
+| `u10` | 10m U Wind Component | Zonal wind component |
+| `v10` | 10m V Wind Component | Meridional wind component |
+
+**Source:** ERA5 Reanalysis Data (ECMWF).
+
+
+### 🔥 Wildfire Label
+
+|  Subset Name  |  Description  |
+|---------------|---------------|
+| `wildfire_risk` | Daily wildfire risk grid |
+
+This serves as the target variable for modeling.
+
+**Source:** NASA FIRMS active fire products, derived from MODIS sensors onboard Terra and Aqua satellites and VIIRS sensors onboard Suomi-NPP and NOAA-20 platforms.
+
+
+### Coordinate Information
+
+| Subset Name | Description |
+|-------------|------------|
+| `valid_time` | Daily timestamps (YYYY-MM-DD format) |
+| `latitude` | Latitude grid values |
+| `longitude` | Longitude grid values |
 
 
 
-### Step 3: Grid-Level Feature Integration
-
-For each grid cell $i$ and day $t$, all aligned features are concatenated into a unified multi-channel representation:
-
-$$
-\mathbf{x}_{i,t} =
-\left[
-\mathbf{f}^{\text{fire}}_{i,t},
-\mathbf{f}^{\text{meteo}}_{i,t},
-\mathbf{f}^{\text{geo}}_{i,t}
-\right]
-$$
-
-
-### Step 4: Wildfire Risk Label Generation
+### Wildfire Risk Label Generation
 
 Wildfire risk labels are derived from NASA fire confidence score (continuous value). Each grid cell is assigned one of three risk levels:
   * Low
@@ -103,6 +183,9 @@ Key statistics of the released subsets are summarized in the table below.
 | Avg. Fire Ratio per Map      | 0.9362              | 0.9075              |
 | Avg. Non-Fire Ratio per Map  | 0.0638              | 0.0925              |
 | Fire Confidence Distribution | Low / Mid / High    | Low / Mid / High    |
+
+
+
 
 
 ## Getting Started with the FireTrend Model
@@ -324,57 +407,13 @@ where $\beta$ balances physics guidance and data-driven prediction.
 
 ## FireCast-US Dataset Specification & Usage
 
-FireCast-US dataset integrates multi-source environmental, vegetation, topography, fuel, meteorological, and wildfire risk data into a unified spatial-temporal HDF5 format for wildfire modeling and analysis.
 
-### Repository Dataset Structure
-
-```
-
-data/
-│
-├── FireCast-CA/
-│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
-│
-├── FireCast-FL/
-│   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
-
-```
-
-## Full Dataset Availability
-
-The **complete FireCast dataset** is too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
-  
-
-> https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
-
-
-
-
-## How to Load the Dataset
-
-Example using `h5py`:
-
-```python
-import h5py
-
-with h5py.File("CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5", "r") as f:
-  print(list(f.keys()))
-  wildfire = f["wildfire_risk"][:]
-````
-
-
-## Dataset Structure
-
-Each `.h5` file contains multiple named datasets (subsets). Each subset corresponds to one feature and is stored independently inside the HDF5 file.All spatial features share the same grid.
 
 ### Data Shape
 
 Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
 
 **For the full dataset, the time span is: `2023-02-25` → `2025-10-21`, with daily resolution.**
-
-
-## Data Sources
 
 The dataset integrates information from:
 
@@ -383,8 +422,7 @@ The dataset integrates information from:
 - **Wildfire Risk Observations** (NASA Satellite Observations)
 
 
-
-## Included Features
+## Dataset Features and Sources
 
 Below is the complete list of subsets stored inside each `.h5` file:
 
@@ -448,20 +486,50 @@ In FireCast, the data is aggregated to **daily resolution**.
 
 ### 🔥 Wildfire Label
 
-| Subset Name | Description |
-|-------------|------------|
+|  Subset Name  |  Description  |
+|---------------|---------------|
 | `wildfire_risk` | Daily wildfire risk grid |
 
 This serves as the target variable for modeling.
 
+**Source:** NASA FIRMS active fire products, derived from MODIS sensors onboard Terra and Aqua satellites and VIIRS sensors onboard Suomi-NPP and NOAA-20 platforms.
 
-## Coordinate Information
+
+### Coordinate Information
 
 | Subset Name | Description |
 |-------------|------------|
 | `valid_time` | Daily timestamps (YYYY-MM-DD format) |
 | `latitude` | Latitude grid values |
 | `longitude` | Longitude grid values |
+
+
+
+### Wildfire Risk Label Generation
+
+Wildfire risk labels are derived from NASA fire confidence score (continuous value). Each grid cell is assigned one of three risk levels:
+  * Low
+  * Medium
+  * High
+Labels are generated daily based on aggregated fire confidence within the grid cell.
+
+
+
+### Dataset Statistics
+
+Key statistics of the released subsets are summarized in the table below.
+
+| Statistic                    | FireCast-CA         | FireCast-FL         |
+| ---------------------------- | ------------------- | ------------------- |
+| Time Duration                | Feb 2023 – Dec 2025 | Feb 2023 – Dec 2025 |
+| Total Grid Regions           | 2,496               | 1,216               |
+| Spatial Resolution           | 0.25° × 0.25°       | 0.25° × 0.25°       |
+| Temporal Resolution          | One day             | One day             |
+| Total Feature Dimension      | 20                  | 20                  |
+| Avg. Fire Ratio per Map      | 0.9362              | 0.9075              |
+| Avg. Non-Fire Ratio per Map  | 0.0638              | 0.0925              |
+| Fire Confidence Distribution | Low / Mid / High    | Low / Mid / High    |
+
 
 
 
@@ -473,8 +541,5 @@ This serves as the target variable for modeling.
   booktitle={Submission to Conference}
 }
 ```
-
-
-
 
 
