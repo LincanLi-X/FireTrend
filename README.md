@@ -151,7 +151,7 @@ This serves as the target variable for modeling.
 
 | Subset Name | Description |
 |-------------|------------|
-| `valid_time` | Daily timestamps (YYYY-MM-DD format) |
+| `valid_time` | Daily timestamps (YYYY-MM-DD) |
 | `latitude` | Latitude grid values |
 | `longitude` | Longitude grid values |
 
