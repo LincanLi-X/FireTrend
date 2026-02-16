@@ -30,7 +30,7 @@ Each `.h5` file contains daily grid-based wildfire risk score and aligned multi-
 
 ### Full Dataset Availability
 
-⚠️ Note that the **complete FireCast-CA** and **FireCast-FL** are too large to be uploaded directly in the GitHub repository. 
+⚠️ NOTE that the **complete FireCast-CA** and **FireCast-FL** are too large to be uploaded directly in the GitHub repository. 
 Therefore, The full dataset is provided via an **anonymized Google Drive link**:
   
 > https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
