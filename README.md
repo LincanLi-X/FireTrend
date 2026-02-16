@@ -15,24 +15,23 @@ FireCast-US dataset integrates multi-source environmental, vegetation, topograph
 ### Repository Dataset Structure
 
 ```
-
 data/
 │
 ├── FireCast-CA/
-│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
+│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5 # Access the full dataset at https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
 │
 ├── FireCast-FL/
 │   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
 
 ```
 
-Each file contains daily grid-based wildfire risk labels and aligned multi-modal features at a spatial resolution of 0.25° × 0.25°.
-
+Each `.h5` file contains daily grid-based wildfire risk score and aligned multi-modal features at a spatial resolution of 0.25° × 0.25°.
 
 
 ### Full Dataset Availability
 
-The **complete FireCast-CA** and **FireCast-FL** are too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
+⚠️ Note that the **complete FireCast-CA** and **FireCast-FL** are too large to be uploaded directly in the GitHub repository. 
+Therefore, The full dataset is provided via an **anonymized Google Drive link**:
   
 > https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
 
