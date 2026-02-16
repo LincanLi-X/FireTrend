@@ -18,7 +18,7 @@ FireCast-US dataset integrates multi-source environmental, vegetation, topograph
 data/
 │
 ├── FireCast-CA/
-│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5 # Access the full dataset at https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
+│   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
 │
 ├── FireCast-FL/
 │   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
