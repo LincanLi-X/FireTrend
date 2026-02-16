@@ -19,7 +19,7 @@ data/
 
 ## Full Dataset Availability
 
-The **complete FireCast dataset** is too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
+⚠️NOTE that the **complete FireCast dataset** is too large to be uploaded directly in the GitHub repository. Therefore, The full dataset is provided via an **anonymized Google Drive link**:
   
 
 > https://drive.google.com/drive/folders/13_1l7uCxD6APLFWe4ZLUAhM1f_Lnz1ie?usp=sharing
@@ -48,7 +48,7 @@ Each `.h5` file contains multiple named datasets (subsets). Each subset correspo
 
 Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
 
-**For the full dataset, the time span is: `2023-02-25` → `2025-10-21`, with daily resolution.**
+For the full dataset, the **time span from Feb 2023 to Dec 2025, with daily resolution.**
 
 
 # Data Sources
@@ -128,9 +128,9 @@ In FireCast, the data is aggregated to **daily resolution**.
 
 ## 🔥 Wildfire Label
 
-| Subset Name | Description |
-|-------------|------------|
-| `wildfire_risk` | Daily wildfire risk grid |
+|  Subset Name  |   Description   |
+|---------------|-----------------|
+| `wildfire_risk` | Daily wildfire risk score |
 
 This serves as the target variable for modeling.
 
@@ -140,7 +140,7 @@ This serves as the target variable for modeling.
 
 | Subset Name | Description |
 |-------------|------------|
-| `valid_time` | Daily timestamps (YYYY-MM-DD format) |
+| `valid_time` | Daily timestamps (YYYY-MM-DD) |
 | `latitude` | Latitude grid values |
 | `longitude` | Longitude grid values |
 
