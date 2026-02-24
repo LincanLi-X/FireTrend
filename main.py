@@ -1,6 +1,6 @@
 """
 FireTrend: Main training & testing script.
-Integrates wildfire (.h5) and ERA5 (.nc) datasets with FireTrend model.
+Uses FireCast v2 daily single-HDF5 dataset for each region.
 Supports multi-region training (California / Florida).
 
 Run script:
@@ -55,19 +55,14 @@ def train(model, dataloader, optimizer, loss_fn, epoch, device, logger, region):
     for batch_idx, (X, Y_true) in enumerate(tqdm(dataloader, desc=f"[{region}] Epoch {epoch}")):
         X, Y_true = X.to(device), Y_true.to(device)
 
-        # # Split input features [B, T, 9, H, W] = fire(1) + meteo(6) + geo(2)
-        # X_fire = X[:, :, 0:1, :, :]      # wildfire history
-        # X_meteo = X[:, :, 1:7, :, :]     # meteorological features
-        # X_geo = X[:, :, 7:, :, :]        # dynamic geo features [B, T, 2, H, W]
-
-        # Input shape: [B, T, 4, 9, H, W]
-        X_fire  = X[:, :, 0, 0:1, :, :]     # wildfire [B, T, 4, 1, H, W]
-        X_meteo = X[:, :, :, 1:7, :, :]     # meteorology [B, T, 4, 6, H, W]
-        X_geo   = X[:, :, :, 7:, :, :]      # geo [B, T, 4, 2, H, W]
+        # Input shape: [B, T, 19, H, W]
+        X_fire = X[:, :, 0:1, :, :]      # [B, T, 1, H, W]
+        X_meteo = X[:, :, 1:9, :, :]     # [B, T, 8, H, W]
+        X_geo = X[:, :, 9:19, :, :]      # [B, T, 10, H, W]
 
         # Extract wind components (last timestep)
-        wind_u = X_meteo[:, -1, 0:1, :, :]
-        wind_v = X_meteo[:, -1, 1:2, :, :]
+        wind_u = X_meteo[:, -1, 0:1, :, :]   # [B, 1, H, W]
+        wind_v = X_meteo[:, -1, 1:2, :, :]   # [B, 1, H, W]
 
         optimizer.zero_grad()
 
@@ -91,10 +86,12 @@ def train(model, dataloader, optimizer, loss_fn, epoch, device, logger, region):
     # ---- Epoch summary log ----
     avg_loss = total_loss / len(dataloader)
     metrics = test(model, dataloader, device, logger, region)  # 在每轮 epoch 结束后评估
-    iou, auc, f1 = metrics["IoU"], metrics["AUC"], metrics["F1"]
+    iou, auprc, f1 = metrics["IoU"], metrics["AUPRC"], metrics["F1"]
+    mae, rmse = metrics["MAE"], metrics["RMSE"]
     logger.info(
         f"[{region.upper()}] Epoch {epoch} | "
-        f"Avg Loss={avg_loss:.4f} | IoU={iou:.4f} | AUC={auc:.4f} | F1={f1:.4f}"
+        f"Avg Loss={avg_loss:.4f} | MAE={mae:.4f} | RMSE={rmse:.4f} | "
+        f"IoU={iou:.4f} | AUPRC={auprc:.4f} | F1={f1:.4f}"
     )
     return avg_loss
 
@@ -104,23 +101,18 @@ def train(model, dataloader, optimizer, loss_fn, epoch, device, logger, region):
 # ============================================================
 def test(model, dataloader, device, logger, region):
     model.eval()
-    preds, trues = [], []
+    preds_norm, trues_norm = [], []
 
     with torch.no_grad():
         for X, Y_true in tqdm(dataloader, desc=f"[{region}] Testing"):
             X, Y_true = X.to(device), Y_true.to(device)
 
-            # X_fire = X[:, :, 0:1, :, :]
-            # X_meteo = X[:, :, 1:7, :, :]
-            # X_geo = X[:, :, 7:, :, :]  # dynamic geo [B, T, 2, H, W]
+            X_fire = X[:, :, 0:1, :, :]      # [B, T, 1, H, W]
+            X_meteo = X[:, :, 1:9, :, :]     # [B, T, 8, H, W]
+            X_geo = X[:, :, 9:19, :, :]      # [B, T, 10, H, W]
 
-            # # Input shape: [B, T, 4, 9, H, W]
-            X_fire  = X[:, :, 0, 0:1, :, :]     # wildfire [B, T, 4, 1, H, W]
-            X_meteo = X[:, :, :, 1:7, :, :]     # meteorology [B, T, 4, 6, H, W]
-            X_geo   = X[:, :, :, 7:, :, :]      # geo [B, T, 4, 2, H, W]
-
-            wind_u = X_meteo[:, -1, 0:1, :, :]
-            wind_v = X_meteo[:, -1, 1:2, :, :]
+            wind_u = X_meteo[:, -1, 0:1, :, :]   # [B, 1, H, W]
+            wind_v = X_meteo[:, -1, 1:2, :, :]   # [B, 1, H, W]
 
             outputs = model(
                 X_fire=X_fire,
@@ -130,11 +122,17 @@ def test(model, dataloader, device, logger, region):
                 wind_v=wind_v,
             )
 
-            preds.append(outputs["Y_final"].cpu())
-            trues.append(Y_true.cpu())
+            # Keep normalized outputs in [0,1] for stable inverse scaling
+            y_pred_norm = torch.clamp(outputs["Y_final"], 0.0, 1.0)
+            preds_norm.append(y_pred_norm.cpu())
+            trues_norm.append(torch.clamp(Y_true, 0.0, 1.0).cpu())
 
-    preds = torch.cat(preds, dim=0)
-    trues = torch.cat(trues, dim=0)
+    preds_norm = torch.cat(preds_norm, dim=0)
+    trues_norm = torch.cat(trues_norm, dim=0)
+
+    # Re-scale normalized wildfire_risk [0,1] -> [0,100] for reporting
+    preds = dataloader.dataset.denormalize_y(preds_norm)
+    trues = dataloader.dataset.denormalize_y(trues_norm)
     metrics = compute_metrics(preds, trues)
     logger.info(f"[{region.upper()}] Test Results: {metrics}")
     return metrics
@@ -169,36 +167,30 @@ def main():
         seq_length=config["data"]["seq_length"],
         pred_horizon=config["data"]["pred_horizon"],
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=args.train,
         num_workers=config["training"]["num_workers"],
-        normalize=True,
+        normalize=config["data"].get("normalize", True),
     )
-    
-    # Dynamically assign spatial dimensions by region
-    if region.lower() == "california":
-        height, width = 49, 53
-    elif region.lower() == "florida":
-        height, width = 64, 64  # ⚠️ 替换成佛州真实维度
-    else:
-        raise ValueError(f"Unknown region '{region}' — please specify correct H,W.")
 
+    # Infer spatial dimensions directly from dataset
+    height, width = dataloader.dataset.height, dataloader.dataset.width
     logger.info(f"[Config] Region={region.upper()} | Input grid size=({height}, {width})")
 
-    # Correct input dimensions for dynamic geo
     model = FireTrendModel(
-        in_dims={"fire": 1, "meteo": 6, "geo": 2},
+        in_dims={"fire": 1, "meteo": 8, "geo": 10},
         embed_dim=config["model"]["embed_dim"],
         num_heads=config["model"]["num_heads"],
         hidden_dim=config["model"]["hidden_dim"],
-        height=config["model"]["height"],
-        width=config["model"]["width"],
+        height=height,
+        width=width,
         kernel_size=config["model"]["kernel_size"],
         beta=config["model"]["beta"],
         verbose=True,
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    loss_fn = FireTrendLoss().to(device)
+    loss_type = config["training"].get("loss_type", "mse")
+    loss_fn = FireTrendLoss(loss_type=loss_type).to(device)
 
     # ========================================================
     # Train / Test
