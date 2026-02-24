@@ -15,7 +15,7 @@ FireCast-US dataset integrates multi-source environmental, vegetation, topograph
 ### Repository Dataset Structure
 
 ```
-data/
+data_v2/
 │
 ├── FireCast-CA/
 │   └── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
