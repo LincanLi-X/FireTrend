@@ -411,60 +411,163 @@ PYTHONPATH=. python -m unittest tests/test_core.py
 </p> -->
 
 
-### PyroCast: Physics-Guided Directional Aware Convolution
+### PyroCast: Physics-Guided Latent Propagation
 
 
- **Core Idea:** PyroCast embeds wildfire propagation physics into a learnable convolution operator.  
-It approximates wind-driven advection and anisotropic diffusion using a directional kernel.
+**Core Idea:** PyroCast injects physically meaningful wildfire dynamics during label-free representation learning. Instead of post-processing the predicted risk map, PyroCast propagates latent fire-state representations with a wind-conditioned directional kernel derived from local meteorological variables.
 
 #### 1. Physical Motivation
 
-Wildfire spread can be described by a convection-diffusion process:
+PyroCast is inspired by the advection-diffusion equation:
 
 $$
-\frac{\partial R}{\partial t} \approx -\mathbf{v} \cdot \nabla R + D \nabla^2 R
+\frac{\partial R}{\partial t}
+= -\mathbf{v}\cdot\nabla R + D\nabla^2 R,
 $$
 
-Where wind drives directional propagation, and Diffusion smooths intensity locally. PyroCast discretizes this process into a differentiable convolution.
+where the advection term $-\mathbf{v}\cdot\nabla R$ models wind-driven transport and the diffusion term $D\nabla^2R$ models local spread. In FireTrend, this physical form is used as an inductive bias for latent fire-state propagation.
 
-#### 2. Directional Kernel Construction
+#### 2. Meteorology-Conditioned Directional Kernel
 
-We construct a wind-aligned kernel:
-
-$$
-K_t = \alpha_t \cdot \exp\left(-\frac{\| R_{\phi_t}\mathbf{c}_{ij} - \mathbf{c} \|^2}{2\sigma^2} \right)
-$$
-
-where: $\phi_t$ is wind direction, $R_{\phi_t}$ rotates the kernel toward wind; $\sigma$ controls spatial smoothness; $\alpha_t$ scales spread intensity. The scaling factor depends on meteorological features:
+For grid cell $i$ at time $t$, PyroCast uses local meteorological inputs
 
 $$
-\alpha_t \propto s_t \cdot (1 + \eta_1 T_t - \eta_2 H_t)
+\mathbf{M}_{i,t}=\{u_{i,t}, v_{i,t}, \mathcal{T}_{i,t}, \mathcal{H}_{i,t}\},
 $$
 
-**Meaning:** `Faster wind → stronger spread`; `Higher temperature → enhanced ignition`; `Higher humidity → suppressed propagation`  
-
-#### 3. Physics-Guided Latent Propagation
-
-Given latent fire-state representation $\mathbf{H}_t$, PyroCast performs:
+where $(u_{i,t}, v_{i,t})$ are zonal and meridional wind components, $\mathcal{T}_{i,t}$ is temperature, and $\mathcal{H}_{i,t}$ is relative humidity. The local wind magnitude and direction are:
 
 $$
-\tilde{\mathbf{H}}_{t+1}^{\text{phys}}=\mathcal{A}_{K_t}(\mathbf{H}_t)
+s_{i,t}=\sqrt{u_{i,t}^2+v_{i,t}^2},
+\qquad
+\phi_{i,t}=\mathrm{atan2}(v_{i,t},u_{i,t}).
 $$
 
-This propagates latent fire-state information along wind-conditioned directions while preserving spatial continuity.
-
-#### 4. Latent Fusion and Risk-Level Classification
-
-The original and propagated latent states are fused as:
+Let $\boldsymbol{\delta}$ denote a local offset in the convolution neighborhood and let $\mathbf{R}_{\phi_{i,t}}$ be the rotation matrix aligned with the local wind direction. The wind-conditioned directional kernel is parameterized as:
 
 $$
-\mathbf{H}_t^*=\psi\left([\mathbf{H}_t,\tilde{\mathbf{H}}_{t+1}^{\text{phys}}]\right)
+K_{i,t}^{\mathrm{spread}}(\boldsymbol{\delta})
+=
+\alpha_{i,t}
+\exp\left(
+-\frac{1}{2}
+\left(\boldsymbol{\delta}-\boldsymbol{\mu}_{i,t}\right)^{\top}
+\Sigma_{i,t}^{-1}
+\left(\boldsymbol{\delta}-\boldsymbol{\mu}_{i,t}\right)
+\right),
 $$
 
-The downstream classifier then maps $\mathbf{H}_t^*$ to a three-class wildfire risk-level probability map.
+where
+
+$$
+\boldsymbol{\mu}_{i,t}
+=
+-\rho s_{i,t}
+\begin{bmatrix}
+\cos\phi_{i,t}\\
+\sin\phi_{i,t}
+\end{bmatrix},
+\qquad
+\Sigma_{i,t}
+=
+\mathbf{R}_{\phi_{i,t}}
+\begin{bmatrix}
+\sigma_{\parallel}^{2} & 0\\
+0 & \sigma_{\perp}^{2}
+\end{bmatrix}
+\mathbf{R}_{\phi_{i,t}}^{\top}.
+$$
+
+Here, $\boldsymbol{\mu}_{i,t}$ captures first-order wind-driven advection, $\rho$ controls the advection step size, and $\sigma_{\parallel}$ and $\sigma_{\perp}$ control anisotropic diffusion along and across the wind direction. The nonnegative propagation strength is:
+
+$$
+\alpha_{i,t}
+=
+\operatorname{softplus}
+\left(
+\kappa s_{i,t}
++\eta_1\hat{\mathcal{T}}_{i,t}
+-\eta_2\hat{\mathcal{H}}_{i,t}
+\right),
+$$
+
+where $\hat{\mathcal{T}}_{i,t}$ and $\hat{\mathcal{H}}_{i,t}$ are normalized temperature and humidity, and $\kappa$, $\eta_1$, and $\eta_2$ are learnable parameters. Faster wind and higher temperature increase propagation strength, while higher humidity suppresses propagation.
+
+#### 3. Physics-Guided Latent Propagation Operator
+
+Let
+
+$$
+\mathbf{H}_t=\mathcal{G}(\mathbf{S}_{1:t},\mathbf{Z}_{1:t})
+\in \mathbb{R}^{I\times J\times d}
+$$
+
+denote the latent fire-state representation produced by the multimodal spatial-temporal encoder. Given the wind-conditioned kernel $K_t^{\mathrm{spread}}$, PyroCast propagates $\mathbf{H}_t$ into a physics-guided next-step latent state:
+
+$$
+\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
+=
+\mathcal{F}_{\mathrm{pyro}}
+\left(\mathbf{H}_t,K_t^{\mathrm{spread}}\right)
+=
+\mathcal{A}_{K_t}(\mathbf{H}_t).
+$$
+
+The spatially varying aggregation is applied channel-wise:
+
+$$
+\left[\mathcal{A}_{K_t}(\mathbf{H}_t)\right]_i
+=
+\sum_{\boldsymbol{\delta}\in\mathcal{N}(0)}
+K_{i,t}^{\mathrm{spread}}(\boldsymbol{\delta})\,
+\mathbf{H}_{t,i+\boldsymbol{\delta}},
+$$
+
+where $\mathcal{N}(0)$ denotes the local offset set around each grid cell. This operation is a differentiable discrete approximation of wind-driven advection-diffusion dynamics in the latent representation space.
+
+#### 4. Latent Fusion and Downstream Classification
+
+The original and propagated latent states are fused to form a physics-aware representation:
+
+$$
+\mathbf{H}_t^*
+=
+\psi\left(
+\left[
+\mathbf{H}_t,
+\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
+\right]
+\right),
+$$
+
+where $[\cdot,\cdot]$ denotes channel-wise concatenation and $\psi(\cdot)$ is a lightweight fusion layer. The downstream classifier maps $\mathbf{H}_T^*$ to three-class wildfire risk-level logits for the next time step.
+
+#### 5. Self-Supervised Latent Propagation Loss
+
+During label-free pretraining, PyroCast is optimized as a physics-guided predictive pretext task. The next latent state $\mathbf{H}_{t+1}$ is encoded from the next observed risk-score and covariate sequence, and the propagated latent state is aligned with it:
+
+$$
+\mathcal{L}_{\mathrm{pyro}}
+=
+\sum_{t=1}^{T-1}
+\left\|
+\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
+-\mathbf{H}_{t+1}
+\right\|_2^2.
+$$
+
+This loss encourages the representation space to encode how wildfire-related states evolve under wind, temperature, and humidity before supervised risk-level classification.
+
+#### Implementation Mapping
+
+The released code follows this formulation:
+
+- `modules/pyrocast_physics.py` implements the wind-conditioned kernel and applies it channel-wise to latent maps.
+- `modules/firetrend_model.py` applies PyroCast to encoder outputs, fuses $\mathbf{H}_t$ and $\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}$, and computes $\mathcal{L}_{\mathrm{pyro}}$ during pretraining.
+- `utils/data_loader.py` passes raw `u10` and `v10` wind components to PyroCast so wind direction is preserved after input normalization. For the current released HDF5 files, `t2m` is used as temperature and `d2m` is used as the available humidity/moisture proxy.
 
 
-> **Summary:** PyroCast can be viewed as: A wind-aligned, meteorology-modulated convolution that embeds convection–diffusion dynamics into deep learning. It improves spatial coherence and enforces physically plausible wildfire spread while remaining fully differentiable.
+> **Summary:** PyroCast can be viewed as a wind-aligned, meteorology-modulated latent propagation operator. It embeds advection-diffusion dynamics into FireTrend's representation learning stage while remaining fully differentiable and compatible with downstream ordinal wildfire risk-level classification.
 
 ---
 
@@ -502,3 +605,4 @@ The downstream classifier then maps $\mathbf{H}_t^*$ to a three-class wildfire r
   booktitle={Submission to Conference}
 }
 ```
+
