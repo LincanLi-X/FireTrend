@@ -199,17 +199,20 @@ This pipeline follows `Continuous risk-score input → Discrete risk-level predi
 
 Key statistics of the released subsets are summarized in the table below.
 
-| Statistic                    | FireCast-CA         | FireCast-FL         |
-| ---------------------------- | ------------------- | ------------------- |
-| Time Duration                | Feb 2023 – Dec 2025 | Feb 2023 – Dec 2025 |
-| Total Grid Regions           | 2,496               | 1,216               |
-| Spatial Resolution           | 0.25° × 0.25°       | 0.25° × 0.25°       |
-| Temporal Resolution          | One day             | One day             |
-| Total Feature Dimension      | 20                  | 20                  |
-| Avg. Fire Ratio per Map      | 0.9362              | 0.9075              |
-| Avg. Non-Fire Ratio per Map  | 0.0638              | 0.0925              |
-| Fire Confidence Distribution | Low / Mid / High    | Low / Mid / High    |
-
+| Statistic | FireCast-CA | FireCast-FL |
+| --- | --- | --- |
+| Time Duration | Feb/20/2023 - Dec/10/2025 | Feb/20/2023 - Dec/10/2025 |
+| Number of Daily Maps | 1,025 | 1,025 |
+| Total Grid Regions | 2,496 | 1,216 |
+| Spatial Resolution | 0.25° × 0.25° | 0.25° × 0.25° |
+| Temporal Resolution | 1-day | 1-day |
+| Total Feature Dimension | 20 | 20 |
+| Wildfire Risk-Score Range | [0,100] | [0,100] |
+| Mean Wildfire Risk Score | 8.25 | 5.17 |
+| Std. Wildfire Risk Score | 23.74 | 18.19 |
+| Back-/Foreground Grid Ratio | 74% / 26% | 81% / 19% |
+| Risk-Level Label Source | Derived from risk score | Derived from risk score |
+| Forecast Label Space | 0/1/2: low/mid/high risk | 0/1/2: low/mid/high risk |
 
 
 
@@ -295,7 +298,7 @@ cartopy>=0.22.0
 # Training Utilities
 tqdm>=4.66.0
 tensorboard>=2.15.0
-pyyaml>=6.0.2
+PyYAML>=6.0.2
 wandb>=0.16.0
 
 # Evaluation & Metrics
