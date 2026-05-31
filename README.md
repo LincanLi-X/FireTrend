@@ -497,7 +497,7 @@ The downstream classifier then maps $\mathbf{H}_t^*$ to a three-class wildfire r
 ### Acknowledgements
 ```
 @inproceedings{FireTrend2026,
-  title={FireTrend: Physics-Guided Contrastive Learning for Large-Scale Wildfire Risk Forecasting and Management},
+  title={FireTrend: Learning Physics-Guided Latent Fire Dynamics for Wildfire Risk-Level Forecasting},
   author={Anonymous A, Anonymous B, Anonymous C, Anonymous D, Anonymous E, Anonymous F},
   booktitle={Submission to Conference}
 }
