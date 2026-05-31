@@ -262,7 +262,7 @@ FireTrend/
 ```
 
 
-### Install Necessary Dependencies
+### 🔧⚙️Install Necessary Dependencies
 ```sh
 pip install -r requirements.txt
 ```
