@@ -471,7 +471,7 @@ Here, $\boldsymbol{\mu}_{i,t}$ captures first-order wind-driven advection, $\rho
 
 $$
 \alpha_{i,t}=
-\operatorname{softplus}
+\text{Softplus}
 \left(
 \kappa s_{i,t}
 +\eta_1\hat{\mathcal{T}}_{i,t}
@@ -501,9 +501,7 @@ $$
 The spatially varying aggregation is applied channel-wise:
 
 $$
-\left[\mathcal{A}_{K_t}(\mathbf{H}_t)\right]_i
-=
-\sum_{\boldsymbol{\delta}\in\mathcal{N}(0)}
+\left[\mathcal{A}_{K_t}(\mathbf{H}_t)\right]_i=\sum_{\boldsymbol{\delta}\in\mathcal{N}(0)}
 K_{i,t}^{\mathrm{spread}}(\boldsymbol{\delta})\,
 \mathbf{H}_{t,i+\boldsymbol{\delta}},
 $$
