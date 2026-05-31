@@ -1,0 +1,49 @@
+# Core numerical stack
+numpy>=1.23.0
+scipy>=1.10.0
+pandas>=2.0.0
+
+# Deep learning
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+einops>=0.7.0
+
+# Data loading and configuration
+h5py>=3.9.0
+PyYAML>=6.0.2
+tqdm>=4.66.0
+
+# Evaluation
+scikit-learn>=1.4.0
+
+# Logging and experiment utilities
+tensorboard>=2.15.0
+wandb>=0.16.0
+
+# Testing
+pytest>=8.0.0
+
+# Optional model/debug helpers
+timm>=0.9.12
+torchinfo>=1.8.0
+transformers>=4.39.0
+
+# Optional data processing and geospatial tooling
+xarray>=2023.8.0
+netCDF4>=1.6.4
+rasterio>=1.3.8
+geopandas>=0.14.0
+shapely>=2.0.2
+pyproj>=3.6.1
+
+# Optional visualization
+matplotlib>=3.8.0
+seaborn>=0.12.2
+plotly>=5.18.0
+cartopy>=0.22.0
+opencv-python>=4.9.0.80
+
+# Optional profiling
+line-profiler>=4.1.0
+memory-profiler>=0.61.0
