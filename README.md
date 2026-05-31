@@ -443,34 +443,23 @@ s_{i,t}=\sqrt{u_{i,t}^2+v_{i,t}^2},
 \phi_{i,t}=\mathrm{atan2}(v_{i,t},u_{i,t}).
 $$
 
+
 Let $\boldsymbol{\delta}$ denote a local offset in the convolution neighborhood and let $\mathbf{R}_{\phi_{i,t}}$ be the rotation matrix aligned with the local wind direction. The wind-conditioned directional kernel is parameterized as:
 
 $$
-K_{i,t}^{\mathrm{spread}}(\boldsymbol{\delta})
-=
-\alpha_{i,t}
-\exp\left(
--\frac{1}{2}
-\left(\boldsymbol{\delta}-\boldsymbol{\mu}_{i,t}\right)^{\top}
-\Sigma_{i,t}^{-1}
+K_{i,t}^{\mathrm{spread}}(\boldsymbol{\delta})=\alpha_{i,t}\exp\left(-\frac{1}{2}\left(\boldsymbol{\delta}-\boldsymbol{\mu}_{i,t}\right)^{\top}\Sigma_{i,t}^{-1}
 \left(\boldsymbol{\delta}-\boldsymbol{\mu}_{i,t}\right)
 \right),
 $$
 
-where
+where:
 
 $$
-\boldsymbol{\mu}_{i,t}
-=
--\rho s_{i,t}
-\begin{bmatrix}
-\cos\phi_{i,t}\\
+\boldsymbol{\mu}_{i,t}=-\rho s_{i,t}\begin{bmatrix}\cos\phi_{i,t}\\
 \sin\phi_{i,t}
 \end{bmatrix},
-\qquad
-\Sigma_{i,t}
-=
-\mathbf{R}_{\phi_{i,t}}
+\quad
+\Sigma_{i,t}=\mathbf{R}_{\phi_{i,t}}
 \begin{bmatrix}
 \sigma_{\parallel}^{2} & 0\\
 0 & \sigma_{\perp}^{2}
@@ -481,21 +470,20 @@ $$
 Here, $\boldsymbol{\mu}_{i,t}$ captures first-order wind-driven advection, $\rho$ controls the advection step size, and $\sigma_{\parallel}$ and $\sigma_{\perp}$ control anisotropic diffusion along and across the wind direction. The nonnegative propagation strength is:
 
 $$
-\alpha_{i,t}
-=
+\alpha_{i,t}=
 \operatorname{softplus}
 \left(
 \kappa s_{i,t}
 +\eta_1\hat{\mathcal{T}}_{i,t}
 -\eta_2\hat{\mathcal{H}}_{i,t}
-\right),
+\right).
 $$
 
 where $\hat{\mathcal{T}}_{i,t}$ and $\hat{\mathcal{H}}_{i,t}$ are normalized temperature and humidity, and $\kappa$, $\eta_1$, and $\eta_2$ are learnable parameters. Faster wind and higher temperature increase propagation strength, while higher humidity suppresses propagation.
 
 #### 3. Physics-Guided Latent Propagation Operator
 
-Let
+Let:
 
 $$
 \mathbf{H}_t=\mathcal{G}(\mathbf{S}_{1:t},\mathbf{Z}_{1:t})
@@ -505,11 +493,8 @@ $$
 denote the latent fire-state representation produced by the multimodal spatial-temporal encoder. Given the wind-conditioned kernel $K_t^{\mathrm{spread}}$, PyroCast propagates $\mathbf{H}_t$ into a physics-guided next-step latent state:
 
 $$
-\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
-=
-\mathcal{F}_{\mathrm{pyro}}
-\left(\mathbf{H}_t,K_t^{\mathrm{spread}}\right)
-=
+\tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}=\mathcal{F}_{\mathrm{pyro}}
+\left(\mathbf{H}_t,K_t^{\mathrm{spread}}\right)=
 \mathcal{A}_{K_t}(\mathbf{H}_t).
 $$
 
@@ -530,14 +515,12 @@ where $\mathcal{N}(0)$ denotes the local offset set around each grid cell. This 
 The original and propagated latent states are fused to form a physics-aware representation:
 
 $$
-\mathbf{H}_t^*
-=
-\psi\left(
+\mathbf{H}_t^{*}=\psi\left(
 \left[
 \mathbf{H}_t,
 \tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
 \right]
-\right),
+\right)
 $$
 
 where $[\cdot,\cdot]$ denotes channel-wise concatenation and $\psi(\cdot)$ is a lightweight fusion layer. The downstream classifier maps $\mathbf{H}_T^*$ to three-class wildfire risk-level logits for the next time step.
@@ -547,9 +530,7 @@ where $[\cdot,\cdot]$ denotes channel-wise concatenation and $\psi(\cdot)$ is a 
 During label-free pretraining, PyroCast is optimized as a physics-guided predictive pretext task. The next latent state $\mathbf{H}_{t+1}$ is encoded from the next observed risk-score and covariate sequence, and the propagated latent state is aligned with it:
 
 $$
-\mathcal{L}_{\mathrm{pyro}}
-=
-\sum_{t=1}^{T-1}
+\mathcal{L}_{\mathrm{pyro}}=\sum_{t=1}^{T-1}
 \left\|
 \tilde{\mathbf{H}}_{t+1}^{\mathrm{phys}}
 -\mathbf{H}_{t+1}
