@@ -262,11 +262,12 @@ FireTrend/
 ```
 
 
-### Install necessary packages
+### Install Necessary Dependencies
 ```sh
 pip install -r requirements.txt
 ```
 
+<!--
 #### Required Dependencies
 
 ```
@@ -304,8 +305,8 @@ wandb>=0.16.0
 # Evaluation & Metrics
 scikit-learn>=1.4.0
 opencv-python>=4.9.0.80
-
 ```
+-->
 
 ### Train FireTrend Model
 
