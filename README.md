@@ -1,6 +1,6 @@
 # 🔥FireTrend
 
-### FireTrend: Physics-Guided Contrastive Learning for Large-Scale Wildfire Risk Forecasting and Management
+### FireTrend: Learning Physics-Guided Latent Fire Dynamics for Wildfire Risk-Level Forecasting
 
 <p align="center">
      <img src="assets/firetrend_model.png" alt="FireTrend" width="800px">
