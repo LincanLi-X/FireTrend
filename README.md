@@ -20,6 +20,8 @@ data_v2/
 ├── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
 │
 ├── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
+│
+├── OR_wildfire_grid_ERA5_LANDFIRE_aligned.h5
 
 ```
 
