@@ -14,6 +14,7 @@ data/
 │
 ├── FireCast-FL/
 │   └── FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5
+|
 ├── FireCast-OR/
     └── OR_wildfire_grid_ERA5_LANDFIRE_aligned.h5 #Full dataset provided
 ```
