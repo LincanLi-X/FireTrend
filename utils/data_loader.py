@@ -14,9 +14,6 @@ from utils.data_augmentation import apply_firetrend_augmentations
 class FireDataset(Dataset):
     """
     FireCast HDF5 loader for FireTrend.
-
-    Returns historical risk-score/covariate sequences plus ordinal target
-    labels derived from the provider-defined wildfire risk score.
     """
 
     meteo_vars = ["u10", "v10", "d2m", "t2m", "msl", "sp", "stl1", "swvl1"]
