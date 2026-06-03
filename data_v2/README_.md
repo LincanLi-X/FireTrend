@@ -36,7 +36,7 @@ Example using `h5py`:
 ```python
 import h5py
 
-with h5py.File("CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5", "r") as f:
+with h5py.File("FL_wildfire_grid_ERA5_LANDFIRE_aligned.h5", "r") as f:
   print(list(f.keys()))
   wildfire = f["wildfire_risk"][:]
 ````
@@ -48,7 +48,7 @@ Each `.h5` file contains multiple named datasets (subsets). Each subset correspo
 
 ### Data Shape
 
-Unless otherwise specified, the `shape of each feature` is **(time, latitude_index_feature_value, longitude_index_feature_value)**.
+Unless otherwise specified, the `shape of each feature` is **(time_step, latitude_grid_count, longitude_grid_count)**.
 
 For the full dataset, the **time span from Feb 2023 to Dec 2025, with daily resolution.**
 
