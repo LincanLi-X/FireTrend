@@ -1,7 +1,6 @@
 """
 FireTrend training and evaluation entrypoint.
-
-The default training mode follows the new manuscript:
+The default training mode:
     pretrain label-free representations, then fine-tune the ordinal classifier.
 """
 
