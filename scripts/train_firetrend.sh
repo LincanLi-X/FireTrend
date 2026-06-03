@@ -1,5 +1,5 @@
 #!/bin/bash
-# FireTrend: two-stage training script.
+# FireTrend training script.
 
 
 # 1. Basic environment settings
