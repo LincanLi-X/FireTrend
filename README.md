@@ -221,7 +221,6 @@ Key statistics of the released subsets are summarized in the table below.
 
 ## Getting Started with the FireTrend Model
 
-
 ### Code Structure
 
 ```
@@ -232,11 +231,11 @@ FireTrend/
 ├── requirements.txt                # Python package dependencies
 │
 ├── modules/
-│   ├── firetrend_model.py          # Integrated FireTrend model
+│   ├── firetrend_model.py          # FireTrend model
 │   ├── encoder_spatiotemporal.py   # Multimodal spatial-temporal Transformer encoder
-│   ├── contrastive_learning.py     # Temporal, spatial, and cross-modal contrastive objectives
+│   ├── contrastive_learning.py     # Temporal, Spatial, and Cross-modal contrastive objectives
 │   ├── pyrocast_physics.py         # PyroCast latent propagation operator
-│   ├── losses.py                   # Stage-aware pretraining and classification losses
+│   ├── losses.py                   # Pretraining and Classification losses
 │   └── layers/
 │       ├── temporal_transformer.py
 │       ├── spatial_transformer.py
@@ -245,18 +244,15 @@ FireTrend/
 │       └── directional_conv.py
 │
 ├── utils/
-│   ├── data_loader.py              # FireCast HDF5 loader and risk-level label generation
+│   ├── data_loader.py              # FireCast dataset HDF5 loader and risk-level label generation
 │   ├── metrics.py                  # IoU, F1, AUPRC, accuracy, drift metric helpers
 │   ├── logger.py
 │   ├── seed_utils.py
 │   └── data_augmentation.py
 │
 ├── scripts/
-│   ├── train_firetrend.sh          # Default pretrain + finetune script
-│   └── eval_firetrend.sh           # Evaluation helper script
-│
-├── tests/
-│   └── test_core.py                # Lightweight smoke tests
+│   ├── train_firetrend.sh          # Pretrain & finetune script
+│   └── eval_firetrend.sh           # Evaluation script
 │
 └── data_v2/
     ├── CA_wildfire_grid_ERA5_LANDFIRE_aligned.h5
@@ -266,115 +262,99 @@ FireTrend/
 
 
 ### 🔧⚙️Install Necessary Dependencies
+
 ```sh
 pip install -r requirements.txt
 ```
 
-<!--
-#### Required Dependencies
+
+
+### Required Dependencies
 
 ```
 python>=3.10
 numpy>=1.23.0
-scipy>=1.10.0
-pandas>=2.0.0
 
 # Deep Learning Framework
 torch>=2.1.0
-torchvision>=0.16.0
-torchaudio>=2.1.0
 einops>=0.7.0
 
 # Data Handling
 h5py>=3.9.0
-xarray>=2023.8.0
-netCDF4>=1.6.4
-rasterio>=1.3.8
-geopandas>=0.14.0
-shapely>=2.0.2
-
-# Visualization
-matplotlib>=3.8.0
-seaborn>=0.12.2
-plotly>=5.18.0
-cartopy>=0.22.0
 
 # Training Utilities
 tqdm>=4.66.0
 tensorboard>=2.15.0
 PyYAML>=6.0.2
-wandb>=0.16.0
-
-# Evaluation & Metrics
-scikit-learn>=1.4.0
-opencv-python>=4.9.0.80
 ```
--->
 
-### Train FireTrend Model
 
-Use the provided ERA5 + wildfire grid datasets in `data_v2` to train the model.
+
+## Train FireTrend Model
+
+Use the provided datasets in `data_v2/` folder to train the model.
 
 ### 1. Configure the Training Parameters
 
 Open `config.yaml` and update the following:
+
 - `data.root_dir` → point to your local dataset folder (default: `./data_v2`)
-- `data.region` → `"california"` or `"florida"`
+- `data.region` → `"california"` or `"florida"`; the CLI also accepts `ca` and `fl`
 - `data.seq_length`, `data.pred_horizon`
 - `data.risk_thresholds` → thresholds used to convert continuous `wildfire_risk` into `0/1/2` ordinal labels
 - `training.stage` → `"pretrain"`, `"finetune"`, `"joint"`, or `"pretrain_then_finetune"`
-- `training.pretrain_epochs`, `training.finetune_epochs`, `training.batch_size`, `training.lr`
+- `training.pretrain_epochs` and `training.finetune_epochs` → used only by `"pretrain_then_finetune"`
+- `training.epochs` → used by single-stage `"pretrain"`, `"finetune"`, and `"joint"` runs unless `--epochs` is passed
+- `training.batch_size`, `training.lr`
 - `model.num_layers`, `model.embed_dim`, `model.hidden_dim`, `model.num_heads`
 - `pyrocast.kernel_size`, `pyrocast.lambda_pyro`
 
-The grid height and width are inferred from the selected HDF5 file at runtime.
+
 
 ### 2. Start Training
-Run the default two-stage pipeline:
+
+Run the default pipeline:
+
 ```sh
 python main.py --config config.yaml --train --stage pretrain_then_finetune --region california
 ```
 
 You can also run individual stages:
+
 ```sh
-python main.py --config config.yaml --train --stage pretrain --region california
-python main.py --config config.yaml --train --stage finetune --region california --checkpoint ./outputs/checkpoints/california_pretrain_best.pth
-python main.py --config config.yaml --train --stage joint --region florida
+python main.py --config config.yaml --train --stage pretrain --region california --epochs 40
+python main.py --config config.yaml --train --stage finetune --region california --epochs 60 --checkpoint ./path/to/california_pretrain_best.pth
+python main.py --config config.yaml --train --stage joint --region florida --epochs 100
 ```
 
-Checkpoints will be saved to:
-- `./outputs/checkpoints/{region}_{stage}_epoch_XXX.pth`
-- `./outputs/checkpoints/{region}_{stage}_best.pth`
-
-Logs are written to `./outputs/logs/`
-
 **Optional:** use the bash helper script:
+
 ```sh
 bash scripts/train_firetrend.sh
 ```
-
 
 ### Test FireTrend Model
 
 Use a trained checkpoint to evaluate the model on the same region dataset.
 
-1. **Configure the Testing Parameters**
+**1. Configure the Testing Parameters**
+
 - Confirm `data.root_dir` and `data.region` in `config.yaml`
+- Confirm `data.test_split`; the default config evaluates on the held-out `"test"` split.
 - Select the correct checkpoint path (e.g. best model)
 
-2. **Run Testing**
+**2. Run Testing**
+
 ```sh
-python main.py --config config.yaml --test --region california --checkpoint ./outputs/checkpoints/california_finetune_best.pth
+python main.py --config config.yaml --test --region california --checkpoint ./path/to/california_finetune_best.pth
 ```
-The script will load the checkpoint, run evaluation, and print metrics (IoU/AUPRC/F1/Accuracy) to logs.
 
+The script will load the checkpoint, run evaluation, print metrics (IoU/AUPRC/F1/Accuracy/Kappa/PDS/TDE/TCS) to logs, and save metrics plus prediction probabilities.
 
-### Run Lightweight Tests
-
-The repository includes a smoke test for the model forward pass, loss computation, metric computation, and FireCast-CA dataloader path:
+**Optional:** use the evaluation helper script:
 
 ```sh
-PYTHONPATH=. python -m unittest tests/test_core.py
+bash scripts/eval_firetrend.sh
 ```
 
 
