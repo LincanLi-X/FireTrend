@@ -1,10 +1,5 @@
 """
 PyroCast latent propagation for FireTrend.
-
-The NeurIPS 2026 version applies PyroCast in latent fire-state space,
-not as a post-hoc correction on the predicted risk map. The operator
-constructs a wind-conditioned anisotropic kernel per grid cell and applies
-it channel-wise to latent maps H_t.
 """
 
 from __future__ import annotations
