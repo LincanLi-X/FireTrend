@@ -1,7 +1,7 @@
 """
-FireTrend model for ordinal wildfire risk-level forecasting.
+FireTrend model for wildfire risk-level forecasting.
 
-New-version pipeline:
+Pipeline:
 1. Multimodal spatial-temporal encoder.
 2. Label-free multi-view contrastive pretraining.
 3. PyroCast-guided latent fire-state propagation.
