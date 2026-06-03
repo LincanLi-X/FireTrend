@@ -55,37 +55,6 @@ class MultimodalFusion(nn.Module):
         self.concat_proj = nn.Conv3d(embed_dim * 4, embed_dim, kernel_size=1)
         self.norm = nn.BatchNorm3d(embed_dim)
 
-    # def forward(self, X_fire, X_meteo, X_geo):
-    #     """
-    #     Args:
-    #         X_fire:  [B, T, C_f, H, W]
-    #         X_meteo:[B, T, C_m, H, W]
-    #         X_geo:  [B, T, C_g, H, W]
-    #     Returns:
-    #         fused: [B, T, D, H, W]
-    #     """
-    #     check_tensor_shape(X_fire, 5, "Fusion:X_fire")
-    #     check_tensor_shape(X_meteo, 5, "Fusion:X_meteo")
-    #     check_tensor_shape(X_geo, 5, "Fusion:X_geo")
-
-    #     # Rearrange for Conv3D (C at dim=1, T at dim=2)
-    #     X_fire = rearrange(X_fire, "b t c h w -> b c t h w")
-    #     X_meteo = rearrange(X_meteo, "b t c h w -> b c t h w")
-    #     X_geo = rearrange(X_geo, "b t c h w -> b c t h w")
-
-    #     F_fire = self.fire_proj(X_fire)
-    #     F_meteo = self.meteo_proj(X_meteo)
-    #     F_geo = self.geo_proj(X_geo)
-
-    #     # Fusion by summation (aligned across time)
-    #     fused = F_fire + F_meteo + F_geo
-    #     fused = self.norm(fused)
-    #     fused = F.gelu(fused)
-
-    #     # Restore to [B, T, D, H, W]
-    #     fused = rearrange(fused, "b d t h w -> b t d h w")
-    #     return fused
-
 
     def forward(self, X_fire, X_meteo, X_geo, return_modalities: bool = False):
         """
@@ -256,9 +225,9 @@ if __name__ == "__main__":
     H, W = 16, 16
 
     # --- Create dummy inputs ---
-    X_fire = torch.randn(B, T, 1, H, W)        # wildfire daily
-    X_meteo = torch.randn(B, T, 6, H, W)       # meteorological features (daily)
-    X_geo = torch.randn(B, T, 2, H, W)         # dynamic geo features
+    X_fire = torch.randn(B, T, 1, H, W)
+    X_meteo = torch.randn(B, T, 6, H, W)
+    X_geo = torch.randn(B, T, 2, H, W)
 
     # --- Initialize model ---
     model = SpatialTemporalEncoder(
