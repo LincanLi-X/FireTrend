@@ -10,7 +10,7 @@
 
 ## FireCast Dataset
 
-FireCast-US dataset integrates multi-source environmental, vegetation, topography, fuel, meteorological, and wildfire risk data into a unified spatial-temporal HDF5 format for wildfire modeling and analysis. We have prepared two well-formatted `FireCast-CA` and `FireCast-FL` subsets of FireCast-US in this package, as introduced below:
+FireCast-US dataset integrates multi-source environmental, vegetation, topography, fuel, meteorological, and wildfire risk data into a unified spatial-temporal HDF5 format for wildfire modeling and analysis. We prepared three well-formatted `FireCast-CA`, `FireCast-FL`, and `FireCast-OR` subsets of FireCast-US in this package, as introduced below:
 
 ### Repository Dataset Structure
 
