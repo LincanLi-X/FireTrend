@@ -71,9 +71,6 @@ class ProjectionHead(nn.Module):
 class MultiViewContrastive(nn.Module):
     """
     Temporal, spatial, and cross-modal contrastive objectives.
-
-    The implementation uses bounded sampling for memory safety on large grids
-    while preserving the pair definitions from the manuscript.
     """
 
     def __init__(
@@ -111,9 +108,6 @@ class MultiViewContrastive(nn.Module):
     def temporal_contrast(self, Z: torch.Tensor) -> torch.Tensor:
         """
         Align consecutive latent states of the same grid cell.
-
-        For each sampled cell, anchor z_{i,t} is contrasted against all
-        time steps of that same cell except itself; z_{i,t+1} is positive.
         """
         if Z.ndim != 5:
             raise ValueError(f"Temporal contrast expects [B,T,D,H,W], got {Z.shape}")
@@ -128,7 +122,7 @@ class MultiViewContrastive(nn.Module):
 
         losses = []
         for t in range(T - 1):
-            anchor = cells[:, t]  # [N, D]
+            anchor = cells[:, t]
             logits = torch.einsum("nd,nkd->nk", anchor, cells) / self.temperature
             logits[:, t] = -torch.finfo(logits.dtype).max
             labels = torch.full((cells.size(0),), t + 1, device=Z.device, dtype=torch.long)
