@@ -1,8 +1,6 @@
 """
 Multi-view contrastive learning for FireTrend.
-
-The losses follow the NeurIPS 2026 manuscript:
-    L_contrast = L_cross + lambda_s * L_spat + lambda_t * L_temp
+L_contrast = L_cross + lambda_s * L_spat + lambda_t * L_temp
 
 All objectives are label-free and operate on latent fire-state maps
 Z with shape [B, T, D, H, W].
