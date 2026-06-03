@@ -1,6 +1,4 @@
 """
-Losses for the NeurIPS 2026 FireTrend pipeline.
-
 Pretraining:
     L_pretrain = L_contrast + lambda_p * L_pyro
 Fine-tuning:
