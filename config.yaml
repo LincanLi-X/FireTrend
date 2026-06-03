@@ -1,5 +1,3 @@
-# FireTrend configuration for the NeurIPS 2026 method revision.
-
 data:
   root_dir: "./data_v2"
   region: "california"             # california | florida | oregon
@@ -26,13 +24,13 @@ model:
   num_layers: 2
   num_classes: 3
   dropout: 0.1
-  height: 48                       # Runtime is inferred from the selected HDF5 file.
+  height: 48
   width: 52
   meteo_driver_indices:
     u: 0
     v: 1
-    humidity: 2                    # d2m + t2m are converted to relative-humidity proxy by the dataloader.
-    temperature: 3                 # t2m
+    humidity: 2
+    temperature: 3
 
 contrastive:
   temperature: 0.07
@@ -52,7 +50,7 @@ pyrocast:
   detach_target: true
 
 training:
-  stage: "pretrain_then_finetune"  # pretrain | finetune | joint | pretrain_then_finetune
+  stage: "pretrain_then_finetune"
   pretrain_epochs: 40
   finetune_epochs: 60
   epochs: 100
