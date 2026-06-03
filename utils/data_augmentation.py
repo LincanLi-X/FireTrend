@@ -44,6 +44,53 @@ def apply_augmentations(x, config):
     return x
 
 
+def apply_firetrend_augmentations(x, drivers, y_class, y_score, config, future_drivers=None):
+    """
+    Apply spatial augmentations to FireTrend inputs, targets, and drivers.
+
+    Args:
+        x: [T, C, H, W]
+        drivers: [T, 4, H, W] with [u, v, temperature, humidity]
+        future_drivers: optional [Horizon, 4, H, W]
+        y_class: [H, W]
+        y_score: [1, H, W]
+    """
+    aug_cfg = config.get("augmentations", {}) if config else {}
+    if aug_cfg.get("random_rotation", False):
+        raise ValueError(
+            "random_rotation is disabled for FireTrend samples because wind-vector "
+            "rotation and target alignment must be handled explicitly."
+        )
+    if aug_cfg.get("temporal_shuffle", False):
+        raise ValueError("temporal_shuffle is incompatible with chronological forecasting targets.")
+
+    if aug_cfg.get("random_flip", False) and random.random() > 0.5:
+        x = torch.flip(x, dims=[-1])
+        drivers = torch.flip(drivers, dims=[-1])
+        drivers[:, 0:1] = -drivers[:, 0:1]
+        if future_drivers is not None:
+            future_drivers = torch.flip(future_drivers, dims=[-1])
+            future_drivers[:, 0:1] = -future_drivers[:, 0:1]
+        y_class = torch.flip(y_class, dims=[-1])
+        y_score = torch.flip(y_score, dims=[-1])
+
+    if aug_cfg.get("random_vertical_flip", False) and random.random() > 0.5:
+        x = torch.flip(x, dims=[-2])
+        drivers = torch.flip(drivers, dims=[-2])
+        drivers[:, 1:2] = -drivers[:, 1:2]
+        if future_drivers is not None:
+            future_drivers = torch.flip(future_drivers, dims=[-2])
+            future_drivers[:, 1:2] = -future_drivers[:, 1:2]
+        y_class = torch.flip(y_class, dims=[-2])
+        y_score = torch.flip(y_score, dims=[-2])
+
+    if aug_cfg.get("gaussian_noise", False) and random.random() > 0.5:
+        noise_std = aug_cfg.get("noise_std", 0.01)
+        x = x + noise_std * torch.randn_like(x)
+
+    return x, drivers, y_class, y_score, future_drivers
+
+
 class Normalize:
     """
     Normalize input data based on provided mean and std.

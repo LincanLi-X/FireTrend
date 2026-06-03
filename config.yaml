@@ -2,13 +2,16 @@
 
 data:
   root_dir: "./data_v2"
-  region: "california"             # "california" or "florida"; FireCast-OR is intentionally not enabled here.
-  seq_length: 8
+  region: "california"             # california | florida | oregon
+  seq_length: 12
   pred_horizon: 1
   normalize: true
   train_split: "train"
-  eval_split: "val"
+  val_split: "val"
+  test_split: "test"
+  normalization_stats_split: "train"
   split_ratios: [0.7, 0.1, 0.2]
+  risk_label_protocol: "equal_width_0_100"
   risk_thresholds: [33.3333, 66.6667]
 
   modalities:
@@ -18,17 +21,17 @@ data:
 
 model:
   embed_dim: 128
-  hidden_dim: 256
-  num_heads: 8
+  hidden_dim: 512
+  num_heads: 4
   num_layers: 2
   num_classes: 3
   dropout: 0.1
-  height: 49                       # Runtime is inferred from the selected HDF5 file.
-  width: 53
+  height: 48                       # Runtime is inferred from the selected HDF5 file.
+  width: 52
   meteo_driver_indices:
     u: 0
     v: 1
-    humidity: 2                    # d2m is used as the humidity/moisture proxy available in FireCast v2.
+    humidity: 2                    # d2m + t2m are converted to relative-humidity proxy by the dataloader.
     temperature: 3                 # t2m
 
 contrastive:
@@ -50,14 +53,15 @@ pyrocast:
 
 training:
   stage: "pretrain_then_finetune"  # pretrain | finetune | joint | pretrain_then_finetune
-  pretrain_epochs: 20
+  pretrain_epochs: 40
   finetune_epochs: 60
-  epochs: 80
-  batch_size: 2
+  epochs: 100
+  batch_size: 4
   lr: 0.0001
   weight_decay: 0.00001
   lambda_cls: 1.0
-  freeze_encoder_during_finetune: false
+  freeze_encoder_during_finetune: true
+  early_stopping_patience: 10
   data_parallel: true
   num_workers: 0
   seed: 42

@@ -179,6 +179,36 @@ class FireTrendModel(nn.Module):
         H_star = self.latent_fusion(torch.cat([H_t, H_phys], dim=1))
         return H_star, H_phys
 
+    def rollout_physics_aware_representation(
+        self,
+        H_t: torch.Tensor,
+        history_drivers: dict[str, torch.Tensor],
+        forecast_horizon: int = 1,
+        future_drivers: dict[str, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        horizon = max(1, int(forecast_horizon))
+        H_state = H_t
+        H_phys = H_t
+        rollout = []
+        for step in range(horizon):
+            if future_drivers is not None and step < future_drivers["u"].size(1):
+                step_drivers = {key: value[:, step] for key, value in future_drivers.items()}
+                H_phys = self.pyrocast(
+                    H_state,
+                    step_drivers["u"],
+                    step_drivers["v"],
+                    step_drivers["temperature"],
+                    step_drivers["humidity"],
+                )
+            else:
+                H_phys = self._propagate_one(H_state, history_drivers, t=history_drivers["u"].size(1) - 1)
+            rollout.append(H_phys.unsqueeze(1))
+            if step < horizon - 1:
+                H_state = H_phys
+
+        H_star = self.latent_fusion(torch.cat([H_state, H_phys], dim=1))
+        return H_star, H_phys, torch.cat(rollout, dim=1)
+
     def pyrocast_latent_loss(self, Z: torch.Tensor, drivers: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Self-supervised loss: || F_pyro(H_t, K_t) - H_{t+1} ||_2^2."""
         B, T, D, H, W = Z.shape
@@ -200,6 +230,8 @@ class FireTrendModel(nn.Module):
         X_meteo: torch.Tensor,
         X_geo: torch.Tensor,
         X_drivers: torch.Tensor | None = None,
+        X_future_drivers: torch.Tensor | None = None,
+        forecast_horizon: int = 1,
         compute_pretrain: bool = True,
     ) -> dict[str, torch.Tensor | dict[str, torch.Tensor] | tuple[torch.Tensor, torch.Tensor]]:
         _check_shape(X_fire, 5, "X_fire")
@@ -208,6 +240,11 @@ class FireTrendModel(nn.Module):
 
         Z, Z_modalities = self.encode(X_fire, X_meteo, X_geo, return_modalities=True)
         drivers = self._extract_drivers(X_meteo, X_drivers)
+        future_drivers = (
+            self._extract_drivers(X_meteo[:, : X_future_drivers.size(1)], X_future_drivers)
+            if X_future_drivers is not None
+            else None
+        )
 
         zero_loss = Z.sum() * 0.0
         if compute_pretrain:
@@ -224,7 +261,12 @@ class FireTrendModel(nn.Module):
             L_pyro, H_phys_seq = zero_loss, None
 
         H_last = Z[:, -1]
-        H_star, H_phys_last = self.physics_aware_representation(H_last, drivers, t=Z.size(1) - 1)
+        H_star, H_phys_last, H_phys_rollout = self.rollout_physics_aware_representation(
+            H_last,
+            drivers,
+            forecast_horizon=forecast_horizon,
+            future_drivers=future_drivers,
+        )
         logits = self.classifier(H_star)
         probabilities = torch.softmax(logits, dim=1)
         pred_classes = torch.argmax(probabilities, dim=1)
@@ -243,6 +285,7 @@ class FireTrendModel(nn.Module):
             "H_star": H_star,
             "H_phys_last": H_phys_last,
             "H_phys_seq": H_phys_seq,
+            "H_phys_rollout": H_phys_rollout,
             "embeddings": refined_embed,
             "contrast_losses": contrast_losses,
             "L_contrast": contrast_losses["total"],

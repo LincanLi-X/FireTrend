@@ -59,14 +59,49 @@ class SpatialPositionalEncoding(nn.Module):
 
 class SpatialSelfAttention(nn.Module):
     """
-    Multi-head self-attention across spatial grid for one time step.
+    Multi-head self-attention across spatial grid for one time step with
+    geospatial relative-distance/adjacency bias P_geo.
     """
 
-    def __init__(self, dim, num_heads=4, dropout=0.1):
+    def __init__(self, dim, height, width, num_heads=4, dropout=0.1):
         super().__init__()
-        self.attn = nn.MultiheadAttention(embed_dim=dim, num_heads=num_heads, dropout=dropout, batch_first=True)
+        if dim % num_heads != 0:
+            raise ValueError(f"dim={dim} must be divisible by num_heads={num_heads}")
+        self.dim = int(dim)
+        self.num_heads = int(num_heads)
+        self.head_dim = self.dim // self.num_heads
+        self.height = int(height)
+        self.width = int(width)
+        self.qkv = nn.Linear(dim, dim * 3)
+        self.proj = nn.Linear(dim, dim)
         self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
+        self.distance_scale = nn.Parameter(torch.tensor(0.1))
+        self.adjacency_scale = nn.Parameter(torch.tensor(0.1))
+        self.register_buffer("spatial_distance", self._build_distance(self.height, self.width), persistent=False)
+        self.register_buffer("spatial_adjacency", self._build_adjacency(self.height, self.width), persistent=False)
+
+    @staticmethod
+    def _build_distance(height: int, width: int) -> torch.Tensor:
+        yy, xx = torch.meshgrid(torch.arange(height), torch.arange(width), indexing="ij")
+        coords = torch.stack([yy.reshape(-1), xx.reshape(-1)], dim=1).float()
+        dist = torch.cdist(coords, coords, p=2)
+        return dist / dist.max().clamp_min(1.0)
+
+    @staticmethod
+    def _build_adjacency(height: int, width: int) -> torch.Tensor:
+        yy, xx = torch.meshgrid(torch.arange(height), torch.arange(width), indexing="ij")
+        coords = torch.stack([yy.reshape(-1), xx.reshape(-1)], dim=1)
+        delta = (coords[:, None, :] - coords[None, :, :]).abs()
+        return ((delta[..., 0] <= 1) & (delta[..., 1] <= 1) & (delta.sum(dim=-1) > 0)).float()
+
+    def _ensure_spatial_bias(self, height: int, width: int, device: torch.device) -> None:
+        if self.height == height and self.width == width and self.spatial_distance.device == device:
+            return
+        self.height = int(height)
+        self.width = int(width)
+        self.spatial_distance = self._build_distance(height, width).to(device)
+        self.spatial_adjacency = self._build_adjacency(height, width).to(device)
 
     def forward(self, x):
         """
@@ -76,8 +111,26 @@ class SpatialSelfAttention(nn.Module):
             [B, H*W, C]
         """
         check_tensor_shape(x, 3, "SpatialSelfAttention")
+        n_cells = self.height * self.width
+        if x.size(1) != n_cells:
+            raise ValueError(f"Expected {n_cells} spatial cells, got {x.size(1)}")
         x_norm = self.norm(x)
-        attn_out, _ = self.attn(x_norm, x_norm, x_norm)
+        B, N, C = x_norm.shape
+        qkv = self.qkv(x_norm).reshape(B, N, 3, self.num_heads, self.head_dim)
+        q, k, v = qkv.unbind(dim=2)
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+        logits = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
+        p_geo = (
+            -torch.relu(self.distance_scale) * self.spatial_distance
+            + torch.relu(self.adjacency_scale) * self.spatial_adjacency
+        ).to(dtype=logits.dtype, device=logits.device)
+        logits = logits + p_geo.view(1, 1, N, N)
+        attn = torch.softmax(logits, dim=-1)
+        attn = self.dropout(attn)
+        attn_out = torch.matmul(attn, v).transpose(1, 2).reshape(B, N, C)
+        attn_out = self.proj(attn_out)
         out = x + self.dropout(attn_out)
 
         assert out.shape == x.shape, (
@@ -128,7 +181,7 @@ class SpatialTransformerLayer(nn.Module):
     def __init__(self, dim, height, width, num_heads=4, hidden_dim=512, dropout=0.1, verbose=False):
         super().__init__()
         self.pos_encoding = SpatialPositionalEncoding(dim, height, width)
-        self.attn = SpatialSelfAttention(dim, num_heads, dropout)
+        self.attn = SpatialSelfAttention(dim, height, width, num_heads, dropout)
         self.ff = FeedForward(dim, hidden_dim, dropout)
         self.verbose = verbose
 
@@ -150,6 +203,7 @@ class SpatialTransformerLayer(nn.Module):
         for t in range(T):
             xt = x[:, t]  # [B, C, H, W]
             xt = self.pos_encoding(xt)  # [B, C, H, W]
+            self.attn._ensure_spatial_bias(H, W, xt.device)
 
             # Flatten spatial grid
             xt_flat = rearrange(xt, "b c h w -> b (h w) c")

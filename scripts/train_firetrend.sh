@@ -20,7 +20,7 @@ EXP_NAME="FireTrend_pretrain_finetune_$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="$LOG_DIR/${EXP_NAME}.log"
 
 # 4. Training parameters (override yaml if needed)
-PRETRAIN_EPOCHS=20
+PRETRAIN_EPOCHS=40
 FINETUNE_EPOCHS=60
 BATCH_SIZE=4
 LR=1e-4

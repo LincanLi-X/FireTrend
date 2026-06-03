@@ -8,9 +8,11 @@ The default training mode follows the new manuscript:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.optim as optim
 import yaml
@@ -20,7 +22,7 @@ from modules.firetrend_model import FireTrendModel
 from modules.losses import FireTrendLoss
 from utils.data_loader import create_dataloader
 from utils.logger import get_logger
-from utils.metrics import compute_metrics
+from utils.metrics import compute_metrics, compute_pds, compute_temporal_drift_sequence
 from utils.seed_utils import set_seed
 
 
@@ -43,7 +45,7 @@ def get_args():
         default=None,
         choices=["pretrain", "finetune", "joint", "pretrain_then_finetune"],
     )
-    parser.add_argument("--region", type=str, default=None, choices=["california", "florida", "ca", "fl"])
+    parser.add_argument("--region", type=str, default=None, choices=["california", "florida", "oregon", "ca", "fl", "or"])
     parser.add_argument("--device", type=str, default=None)
     return parser.parse_args()
 
@@ -67,18 +69,24 @@ def unpack_batch(batch, device: torch.device):
         y_class = batch["y_class"].to(device, non_blocking=True)
         drivers = batch.get("drivers")
         drivers = drivers.to(device, non_blocking=True) if drivers is not None else None
+        future_drivers = batch.get("future_drivers")
+        future_drivers = future_drivers.to(device, non_blocking=True) if future_drivers is not None else None
+        target_index = batch.get("target_index")
+        target_index = target_index.to(device, non_blocking=True) if target_index is not None else None
     elif isinstance(batch, (tuple, list)) and len(batch) >= 4:
         X, y_class, _, drivers = batch[:4]
         X = X.to(device, non_blocking=True)
         y_class = y_class.to(device, non_blocking=True)
         drivers = drivers.to(device, non_blocking=True)
+        future_drivers = None
+        target_index = None
     else:
         raise ValueError("Expected a FireDataset dict batch or a 4-tuple batch.")
 
     X_fire = X[:, :, 0:1]
     X_meteo = X[:, :, 1:9]
     X_geo = X[:, :, 9:19]
-    return X_fire, X_meteo, X_geo, drivers, y_class
+    return X_fire, X_meteo, X_geo, drivers, future_drivers, y_class, target_index
 
 
 def model_state_dict(model):
@@ -102,12 +110,12 @@ def set_trainable_for_stage(model, stage: str, freeze_encoder: bool) -> None:
     for param in target.parameters():
         param.requires_grad = True
     if stage == "finetune" and freeze_encoder:
-        for module in [target.encoder, target.contrastive, target.pyrocast, target.latent_fusion]:
+        for module in [target.encoder, target.contrastive, target.pyrocast]:
             for param in module.parameters():
                 param.requires_grad = False
 
 
-def run_epoch(model, dataloader, optimizer, loss_fn, device, stage, logger, region, epoch):
+def run_epoch(model, dataloader, optimizer, loss_fn, device, stage, logger, region, epoch, forecast_horizon):
     model.train()
     set_trainable_for_stage(
         model,
@@ -118,7 +126,7 @@ def run_epoch(model, dataloader, optimizer, loss_fn, device, stage, logger, regi
     progress = tqdm(dataloader, desc=f"[{region}] {stage} epoch {epoch}")
 
     for batch in progress:
-        X_fire, X_meteo, X_geo, drivers, y_class = unpack_batch(batch, device)
+        X_fire, X_meteo, X_geo, drivers, future_drivers, y_class, _ = unpack_batch(batch, device)
         optimizer.zero_grad(set_to_none=True)
 
         outputs = model(
@@ -126,6 +134,8 @@ def run_epoch(model, dataloader, optimizer, loss_fn, device, stage, logger, regi
             X_meteo=X_meteo,
             X_geo=X_geo,
             X_drivers=drivers,
+            X_future_drivers=future_drivers,
+            forecast_horizon=forecast_horizon,
             compute_pretrain=stage in {"pretrain", "joint"},
         )
         losses = loss_fn(outputs, None if stage == "pretrain" else y_class, stage=stage)
@@ -144,26 +154,67 @@ def run_epoch(model, dataloader, optimizer, loss_fn, device, stage, logger, regi
     return avg
 
 
+def _json_safe(metrics: dict[str, float]) -> dict[str, float | None]:
+    out = {}
+    for key, value in metrics.items():
+        value = float(value)
+        out[key] = None if np.isnan(value) or np.isinf(value) else value
+    return out
+
+
+def save_evaluation_outputs(save_dir, region, metrics, probabilities, targets, target_indices, logger):
+    os.makedirs(save_dir, exist_ok=True)
+    metrics_path = os.path.join(save_dir, f"{region}_metrics.json")
+    preds_path = os.path.join(save_dir, f"{region}_predictions.npz")
+    with open(metrics_path, "w", encoding="utf-8") as f:
+        json.dump(_json_safe(metrics), f, indent=2)
+    np.savez_compressed(
+        preds_path,
+        probabilities=probabilities.numpy(),
+        targets=targets.numpy(),
+        target_indices=target_indices.numpy() if target_indices is not None else np.array([], dtype=np.int64),
+    )
+    logger.info(f"Saved metrics to {metrics_path}")
+    logger.info(f"Saved predictions to {preds_path}")
+
+
 @torch.no_grad()
-def evaluate(model, dataloader, device, logger, region):
+def evaluate(model, dataloader, device, logger, region, forecast_horizon=1, results_dir=None):
     model.eval()
-    logits_all, targets_all = [], []
+    logits_all, targets_all, probs_all, target_indices_all = [], [], [], []
+    wind_u_all, wind_v_all = [], []
     for batch in tqdm(dataloader, desc=f"[{region}] evaluation"):
-        X_fire, X_meteo, X_geo, drivers, y_class = unpack_batch(batch, device)
+        X_fire, X_meteo, X_geo, drivers, future_drivers, y_class, target_index = unpack_batch(batch, device)
         outputs = model(
             X_fire=X_fire,
             X_meteo=X_meteo,
             X_geo=X_geo,
             X_drivers=drivers,
+            X_future_drivers=future_drivers,
+            forecast_horizon=forecast_horizon,
             compute_pretrain=False,
         )
         logits_all.append(outputs["logits"].detach().cpu())
+        probs_all.append(outputs["probabilities"].detach().cpu())
         targets_all.append(y_class.detach().cpu())
+        if target_index is not None:
+            target_indices_all.append(target_index.detach().cpu())
+        driver_ref = future_drivers[:, -1] if future_drivers is not None and future_drivers.size(1) > 0 else drivers[:, -1]
+        wind_u_all.append(driver_ref[:, 0].detach().cpu())
+        wind_v_all.append(driver_ref[:, 1].detach().cpu())
 
     logits = torch.cat(logits_all, dim=0)
+    probabilities = torch.cat(probs_all, dim=0)
     targets = torch.cat(targets_all, dim=0)
+    wind_u = torch.cat(wind_u_all, dim=0)
+    wind_v = torch.cat(wind_v_all, dim=0)
+    target_indices = torch.cat(target_indices_all, dim=0) if target_indices_all else None
     metrics = compute_metrics(logits, targets, num_classes=logits.size(1))
+    metrics["PDS"] = compute_pds(probabilities, wind_u, wind_v, class_index=min(2, logits.size(1) - 1))
+    metrics.update(compute_temporal_drift_sequence(probabilities, targets, target_indices=target_indices))
     logger.info(f"[{region.upper()}] evaluation | {metrics}")
+    if results_dir is not None:
+        save_evaluation_outputs(results_dir, region, metrics, probabilities, targets, target_indices, logger)
     return metrics
 
 
@@ -193,8 +244,10 @@ def build_dataloader(config, region, batch_size, split, shuffle, config_dir):
         num_workers=int(config["training"].get("num_workers", data_cfg.get("num_workers", 0))),
         normalize=bool(data_cfg.get("normalize", True)),
         risk_thresholds=data_cfg.get("risk_thresholds", [33.3333, 66.6667]),
+        risk_label_protocol=data_cfg.get("risk_label_protocol", "equal_width_0_100"),
         split=split,
         split_ratios=data_cfg.get("split_ratios", [0.7, 0.1, 0.2]),
+        normalization_stats_split=data_cfg.get("normalization_stats_split", "train"),
         return_dict=True,
     )
 
@@ -250,14 +303,17 @@ def main():
         region = "california"
     if region == "fl":
         region = "florida"
-    if region not in {"california", "florida"}:
-        raise ValueError("Only FireCast-CA and FireCast-FL are enabled in this code release.")
+    if region == "or":
+        region = "oregon"
+    if region not in {"california", "florida", "oregon"}:
+        raise ValueError("Supported regions: california, florida, oregon.")
 
     train_cfg = config["training"]
     batch_size = int(args.batch_size or train_cfg.get("batch_size", 2))
     lr = as_float(args.lr, as_float(train_cfg.get("lr", 1e-4)))
     weight_decay = as_float(train_cfg.get("weight_decay", 0.0))
     stage = args.stage or train_cfg.get("stage", "pretrain_then_finetune")
+    forecast_horizon = int(config["data"].get("pred_horizon", 1))
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() and config["device"].get("use_gpu", True) else "cpu"))
 
     set_seed(int(train_cfg.get("seed", 42)), deterministic=bool(train_cfg.get("deterministic", False)))
@@ -276,11 +332,11 @@ def main():
         shuffle=True,
         config_dir=config_dir,
     )
-    eval_loader = build_dataloader(
+    val_loader = build_dataloader(
         config,
         region=region,
         batch_size=batch_size,
-        split=config["data"].get("eval_split", "val"),
+        split=config["data"].get("val_split", "val"),
         shuffle=False,
         config_dir=config_dir,
     )
@@ -303,14 +359,23 @@ def main():
     if args.test:
         if args.checkpoint is None:
             logger.warning("Testing without an explicit checkpoint uses the current randomly initialized model.")
-        evaluate(model, eval_loader, device, logger, region)
+        test_loader = build_dataloader(
+            config,
+            region=region,
+            batch_size=batch_size,
+            split=config["data"].get("test_split", "test"),
+            shuffle=False,
+            config_dir=config_dir,
+        )
+        results_dir = resolve_path(args.results_dir or config["outputs"].get("results_dir"), config_dir)
+        evaluate(model, test_loader, device, logger, region, forecast_horizon=forecast_horizon, results_dir=results_dir)
         return
 
     if not args.train:
         logger.warning("Please specify --train or --test.")
         return
 
-    run_epoch.freeze_encoder = bool(train_cfg.get("freeze_encoder_during_finetune", False))
+    run_epoch.freeze_encoder = bool(train_cfg.get("freeze_encoder_during_finetune", True))
 
     if stage == "pretrain_then_finetune":
         stages = [
@@ -325,23 +390,37 @@ def main():
         set_trainable_for_stage(
             model,
             stage=stage_name,
-            freeze_encoder=bool(train_cfg.get("freeze_encoder_during_finetune", False)),
+            freeze_encoder=bool(train_cfg.get("freeze_encoder_during_finetune", True)),
         )
-        optimizer = optim.AdamW(
+        optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()),
             lr=lr,
             weight_decay=weight_decay,
         )
-        best_iou = -1.0
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, n_epochs))
+        patience = int(train_cfg.get("early_stopping_patience", 10))
+        patience_counter = 0
+        best_score = float("inf") if stage_name == "pretrain" else -1.0
         for epoch in range(1, n_epochs + 1):
-            run_epoch(model, train_loader, optimizer, loss_fn, device, stage_name, logger, region, epoch)
-            metrics = evaluate(model, eval_loader, device, logger, region)
+            train_losses = run_epoch(
+                model, train_loader, optimizer, loss_fn, device, stage_name, logger, region, epoch, forecast_horizon
+            )
+            metrics = evaluate(model, val_loader, device, logger, region, forecast_horizon=forecast_horizon)
+            scheduler.step()
             ckpt_path = os.path.join(save_dir, f"{region}_{stage_name}_epoch_{epoch:03d}.pth")
             save_checkpoint(model, ckpt_path, stage_name, epoch, config, logger)
-            if metrics["IoU"] > best_iou:
-                best_iou = metrics["IoU"]
+            score = train_losses.get("L_pretrain", train_losses["L_total"]) if stage_name == "pretrain" else metrics["IoU"]
+            is_better = score < best_score if stage_name == "pretrain" else score > best_score
+            if is_better:
+                best_score = score
+                patience_counter = 0
                 best_path = os.path.join(save_dir, f"{region}_{stage_name}_best.pth")
                 save_checkpoint(model, best_path, stage_name, epoch, config, logger)
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    logger.info(f"Early stopping {stage_name} after {epoch} epochs.")
+                    break
 
 
 if __name__ == "__main__":

@@ -23,6 +23,11 @@ def _positive_parameter(raw: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     return F.softplus(raw) + eps
 
 
+def _inverse_softplus(value: float, eps: float = 1e-4) -> torch.Tensor:
+    value = max(float(value) - eps, eps)
+    return torch.log(torch.expm1(torch.tensor(value)))
+
+
 class DirectionalConv2D(nn.Module):
     """
     Spatially adaptive directional convolution.
@@ -52,9 +57,9 @@ class DirectionalConv2D(nn.Module):
         self.normalize_kernel = normalize_kernel
         self.verbose = verbose
 
-        self.raw_rho = nn.Parameter(torch.tensor(float(rho)))
-        self.raw_sigma_parallel = nn.Parameter(torch.tensor(float(sigma_parallel)))
-        self.raw_sigma_perp = nn.Parameter(torch.tensor(float(sigma_perp)))
+        self.raw_rho = nn.Parameter(_inverse_softplus(float(rho)))
+        self.raw_sigma_parallel = nn.Parameter(_inverse_softplus(float(sigma_parallel)))
+        self.raw_sigma_perp = nn.Parameter(_inverse_softplus(float(sigma_perp)))
 
         # Propagation strength alpha = softplus(kappa*s + eta_t*T - eta_h*H)
         self.kappa = nn.Parameter(torch.tensor(1.0))
@@ -132,10 +137,10 @@ class DirectionalConv2D(nn.Module):
             + self.eta_temperature.to(dtype=dtype) * temperature
             - self.eta_humidity.to(dtype=dtype) * humidity
         ).unsqueeze(1)
-        kernel = alpha * torch.exp(exponent)
-        kernel = kernel.reshape(B, k * k, H, W)
+        gaussian = torch.exp(exponent).reshape(B, k * k, H, W)
         if self.normalize_kernel:
-            kernel = kernel / (kernel.sum(dim=1, keepdim=True) + 1e-8)
+            gaussian = gaussian / (gaussian.sum(dim=1, keepdim=True) + 1e-8)
+        kernel = alpha.reshape(B, 1, H, W) * gaussian
 
         if self.verbose:
             print(

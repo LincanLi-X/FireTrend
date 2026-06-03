@@ -28,7 +28,8 @@ def check_tensor_shape(tensor: torch.Tensor, expected_dims: int, context: str = 
 # -----------------------------------------------------------
 class MultimodalFusion(nn.Module):
     """
-    Fuses wildfire (daily), ERA5 (encoded daily), and dynamic geospatial inputs.
+    Projects score, meteorology, remote/vegetation/fuel, and static geospatial
+    inputs separately, then concatenates them as in the manuscript.
     """
 
     def __init__(self, in_dims, embed_dim):
@@ -37,18 +38,21 @@ class MultimodalFusion(nn.Module):
             in_dims (dict): {'fire': C_f, 'meteo': C_m, 'geo': C_g}
         """
         super().__init__()
+        geo_dim = int(in_dims["geo"])
+        if geo_dim >= 10:
+            self.remote_indices = [0, 1, 2, 6, 7, 8, 9]
+            self.geo_static_indices = [3, 4, 5]
+        else:
+            self.remote_indices = list(range(geo_dim))
+            self.geo_static_indices = []
+        remote_dim = len(self.remote_indices)
+        geo_static_dim = max(1, len(self.geo_static_indices))
+
         self.fire_proj = nn.Conv3d(in_dims['fire'], embed_dim, kernel_size=1)
         self.meteo_proj = nn.Conv3d(in_dims['meteo'], embed_dim, kernel_size=1)
-        # Temporal convolution to aggregate 4 hourly ERA5 slices → 1 daily representation
-        # self.meteo_temporal_conv = nn.Conv3d(
-        #     in_channels=in_dims['meteo'],  # 6 meteorological features
-        #     out_channels=in_dims['meteo'],  # keep same feature size
-        #     kernel_size=(4, 1, 1),          # aggregate 4 hourly slices
-        #     stride=(4, 1, 1),
-        #     padding=0,
-        #     bias=True
-        # )
-        self.geo_proj = nn.Conv3d(in_dims['geo'], embed_dim, kernel_size=1)
+        self.remote_proj = nn.Conv3d(remote_dim, embed_dim, kernel_size=1)
+        self.geo_proj = nn.Conv3d(geo_static_dim, embed_dim, kernel_size=1)
+        self.concat_proj = nn.Conv3d(embed_dim * 4, embed_dim, kernel_size=1)
         self.norm = nn.BatchNorm3d(embed_dim)
 
     # def forward(self, X_fire, X_meteo, X_geo):
@@ -105,12 +109,17 @@ class MultimodalFusion(nn.Module):
         X_meteo = rearrange(X_meteo, "b t c h w -> b c t h w")
         F_meteo = self.meteo_proj(X_meteo)
 
-        # --- Geo ---
+        # --- Remote/vegetation/fuel and static geospatial ---
         X_geo = rearrange(X_geo, "b t c h w -> b c t h w")
-        F_geo = self.geo_proj(X_geo)
+        F_remote = self.remote_proj(X_geo[:, self.remote_indices])
+        if self.geo_static_indices:
+            F_geo = self.geo_proj(X_geo[:, self.geo_static_indices])
+        else:
+            zeros = X_geo[:, :1] * 0.0
+            F_geo = self.geo_proj(zeros)
 
-        # --- Fusion ---
-        fused = F_fire + F_meteo + F_geo
+        # --- Concatenation-based fusion ---
+        fused = self.concat_proj(torch.cat([F_fire, F_meteo, F_remote, F_geo], dim=1))
         fused = self.norm(fused)
         fused = F.gelu(fused)
         fused = rearrange(fused, "b d t h w -> b t d h w")
@@ -121,6 +130,7 @@ class MultimodalFusion(nn.Module):
         modality_feats = {
             "fire": rearrange(F.gelu(F_fire), "b d t h w -> b t d h w"),
             "meteo": rearrange(F.gelu(F_meteo), "b d t h w -> b t d h w"),
+            "remote": rearrange(F.gelu(F_remote), "b d t h w -> b t d h w"),
             "geo": rearrange(F.gelu(F_geo), "b d t h w -> b t d h w"),
         }
         return fused, modality_feats
