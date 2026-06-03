@@ -387,9 +387,9 @@ PYTHONPATH=. python -m unittest tests/test_core.py
 </p>
 
 <p align="center">
-     <br/> Table 2. Performance comparison of different methods on WildfireSpreadTS dataset. The best results are highlighted in bold.
+     <br/> Table 2. Comparison of different methods on FireCast-OR dataset. The best results are highlighted in bold.
      <br/>
-     <img src="assets/Experiment_Table2.png" alt="dataset_flowchart" width="400px">
+     <img src="assets/Experiment_Table2.png" alt="dataset_flowchart" width="390px">
 </p>
 
 <!-- <p align="center">
