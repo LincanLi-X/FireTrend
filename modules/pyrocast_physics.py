@@ -166,10 +166,6 @@ class DirectionalConv2D(nn.Module):
 class PyroCastPhysics(nn.Module):
     """
     Physics-guided latent propagation wrapper.
-
-    The module is intentionally channel-agnostic, so it can propagate a
-    one-channel map for diagnostics, but the FireTrend model uses it on
-    latent feature maps [B, D, H, W].
     """
 
     def __init__(
