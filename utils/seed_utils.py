@@ -1,20 +1,3 @@
-"""
-seed_utils.py
-------------------------------------
-Randomness control utilities for FireTrend project.
-
-Ensures reproducibility across:
-- Python random module
-- NumPy
-- PyTorch (CPU and CUDA)
-- DataLoader subprocess workers
-
-Usage:
-    from utils.seed_utils import set_seed, seed_worker
-    set_seed(42)
-    DataLoader(..., worker_init_fn=seed_worker)
-"""
-
 import os
 import random
 import numpy as np
@@ -22,7 +5,7 @@ import torch
 
 def set_seed(seed: int = 42, deterministic: bool = True) -> None:
     """
-    Set random seed for full reproducibility.
+    Set random seed for reproducibility.
 
     Args:
         seed (int): Random seed value.
@@ -54,7 +37,7 @@ def set_seed(seed: int = 42, deterministic: bool = True) -> None:
     # except Exception:
     #     pass
 
-    print(f"🌱 Random seed set to {seed} | Deterministic mode = {deterministic}")
+    print(f"Random seed set to {seed} | Deterministic mode = {deterministic}")
 
 
 def seed_worker(worker_id: int) -> None:
