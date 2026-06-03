@@ -1,13 +1,3 @@
-"""
-utils package for FireTrend project
------------------------------------
-
-Contains general-purpose utility functions and helper modules for:
-- Data loading and augmentation
-- Metrics calculation
-- Logging and reproducibility utilities
-"""
-
 from .data_loader import FireDataset, create_dataloader
 from .data_augmentation import apply_augmentations
 from .metrics import compute_metrics
