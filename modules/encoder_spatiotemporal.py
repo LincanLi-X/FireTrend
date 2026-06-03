@@ -1,5 +1,5 @@
 """
-FireTrend Stage 1 — Two-Scale Multimodal Spatial-Temporal Encoder (Corrected)
+FireTrend Stage 1 — Two-Scale Multimodal Spatial-Temporal Encoder,
 Integrates wildfire history, meteorological, and dynamic geospatial inputs.
 """
 
