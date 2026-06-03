@@ -6,7 +6,7 @@
      <img src="assets/firetrend_model.png" alt="FireTrend" width="800px">
 </p>
 
-> FireTrend is an end to end multimodal framework for regional spatiotemporal wildfire risk forecasting. It integrates meteorological records, satellite based fire observations, and geospatial information through a multimodal spatial-temporal Transformer encoder. To improve representation quality, FireTrend introduces a multi-view contrastive learning schema that enforces temporal consistency, spatial coherence, and cross-modal alignment in the latent space. In the updated implementation, the physics-guided module named **PyroCast** models environmental-driven latent fire-state propagation using directional dynamic convolutions, and a downstream classifier predicts ordinal wildfire risk levels.
+> FireTrend is a unified two-stage multimodal framework for spatial-temporal wildfire risk-level forecasting. It learns physics-aware representations from historical wildfire risk-score maps and environmental covariates through a multimodal spatial-temporal Transformer encoder. To improve representation quality, FireTrend uses a label-free multi-view contrastive learning scheme that promotes temporal stability, spatial coherence, and cross-modal alignment in the latent space. The physics-guided module PyroCast models wind-conditioned latent fire-state transitions through adaptive directional convolution kernels derived from meteorological variables, and a downstream classifier predicts next-step ordinal wildfire risk levels.
 
 ## FireCast Dataset
 
