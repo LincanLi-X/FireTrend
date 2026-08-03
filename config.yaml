@@ -1,0 +1,85 @@
+# FireTrend configuration for the NeurIPS 2026 method revision.
+
+data:
+  root_dir: "./data_v2"
+  region: "california"             # california | florida | oregon
+  seq_length: 12
+  pred_horizon: 1
+  normalize: true
+  train_split: "train"
+  val_split: "val"
+  test_split: "test"
+  normalization_stats_split: "train"
+  split_ratios: [0.7, 0.1, 0.2]
+  risk_label_protocol: "equal_width_0_100"
+  risk_thresholds: [33.3333, 66.6667]
+  ignore_index: -100                 # Outside-state/void target pixels.
+
+  modalities:
+    wildfire: ["wildfire_risk"]
+    meteorology: ["u10", "v10", "d2m", "t2m", "msl", "sp", "stl1", "swvl1"]
+    geospatial: ["EVH", "EVC", "EVT", "Aspect", "Slope", "Elevation", "CBD", "FVH", "FVC", "FVT"]
+
+model:
+  embed_dim: 128
+  hidden_dim: 512
+  num_heads: 4
+  num_layers: 2
+  num_classes: 3
+  dropout: 0.1
+  causal_temporal_attention: true    # H_t may attend only to observations at or before t.
+  height: 48                       # Runtime is inferred from the selected HDF5 file.
+  width: 52
+  meteo_driver_indices:
+    u: 0
+    v: 1
+    humidity: 2                    # d2m + t2m are converted to relative-humidity proxy by the dataloader.
+    temperature: 3                 # t2m
+
+contrastive:
+  temperature: 0.07
+  lambda_cross: 1.0
+  lambda_spatial: 1.0
+  lambda_temporal: 1.0
+  max_temporal_cells: 512
+  max_spatial_anchors: 128
+  max_cross_samples: 1024
+
+pyrocast:
+  kernel_size: 5
+  rho: 0.35
+  sigma_parallel: 1.5
+  sigma_perp: 0.75
+  lambda_pyro: 1.0
+  detach_target: true
+
+training:
+  stage: "pretrain_then_finetune"  # pretrain | finetune | joint | pretrain_then_finetune
+  pretrain_epochs: 40
+  finetune_epochs: 60
+  epochs: 100
+  batch_size: 4
+  lr: 0.0001
+  weight_decay: 0.00001
+  lambda_cls: 1.0
+  freeze_encoder_during_finetune: true
+  early_stopping_patience: 10
+  data_parallel: true
+  num_workers: 0
+  seed: 42
+  deterministic: false
+
+logging:
+  save_dir: "./outputs/logs"
+
+outputs:
+  checkpoint_dir: "./outputs/checkpoints"
+  results_dir: "./outputs/predictions"
+  figures_dir: "./outputs/figures"
+
+device:
+  use_gpu: true
+  gpu_id: 0
+
+debug:
+  verbose: false
